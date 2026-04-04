@@ -1332,8 +1332,8 @@ window.addEventListener('mousedown', (e) => {
                     } else if (activeTerminal.action === "rotate_arm") {
                         if (currentLevelData.robotArm) {
                             currentLevelData.robotArmTargetRot -= Math.PI;
-                            currentLevelData.map[8][6] = 0;
-                            currentLevelData.map[7][6] = 0;
+                            currentLevelData.map[8][7] = 0;
+                            currentLevelData.map[7][7] = 0;
                         }
                         document.getElementById('log').innerText = "CORE COMPROMISED. MACHINERY OVERRIDE ENGAGED.";
                     }
