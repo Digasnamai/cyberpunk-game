@@ -52,6 +52,8 @@ renderer.domElement.style.display = 'none';
 // App State (Menu -> Map -> Dialogue -> Game)
 let appState = 'MENU';
 let currentLevelIndex = 1;
+let currentTutorialPages = [];
+let currentTutorialIndex = 0;
 
 function switchScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -262,33 +264,83 @@ document.querySelectorAll('.map-node').forEach(node => {
 });
 
 function startLevel(levelNum) {
-    // Failsafe check for missing level data
     if (!LEVEL_DATA[levelNum]) {
         console.error(`Level ${levelNum} data not found!`);
-        document.getElementById('log').innerText = "ERROR: SECTOR DATA CORRUPTED.";
         return;
     }
 
-    appState = 'GAME';
     currentLevelIndex = levelNum;
     currentLevelData = LEVEL_DATA[levelNum];
 
-    switchScreen('game-ui');
-    renderer.domElement.style.display = 'block';
-
+    // Reset Player Stats
     player.r = currentLevelData.spawn.r;
     player.c = currentLevelData.spawn.c;
-
     player.hp = player.maxHp;
     player.ap = player.maxAp;
     player.inventory = [];
     document.getElementById('hp-bar').style.width = "100%";
     document.getElementById('ap-display').innerText = player.ap;
 
+    // Boot the 3D Engine immediately so it renders in the background!
+    appState = 'GAME';
+    switchScreen('game-ui');
+    renderer.domElement.style.display = 'block';
+
     buildPhysicalWorld();
     initNetrun();
     toggleMode('PHYSICAL');
+
+    // Check for Tutorial Array
+    if (currentLevelData.tutorial && currentLevelData.tutorial.length > 0) {
+        appState = 'TUTORIAL'; // Prevents mouse clicks on the grid
+        currentTutorialPages = currentLevelData.tutorial;
+        currentTutorialIndex = 0;
+
+        document.getElementById('tutorial-overlay').style.display = 'flex';
+        renderTutorialPage();
+    }
 }
+
+function renderTutorialPage() {
+    const page = currentTutorialPages[currentTutorialIndex];
+    document.getElementById('tutorial-title').innerText = page.title;
+    document.getElementById('tutorial-text').innerHTML = page.text;
+
+    const mediaContainer = document.getElementById('tutorial-media-container');
+    if (page.mediaType === 'video') {
+        mediaContainer.innerHTML = `<video src="${page.mediaSrc}" autoplay loop muted playsinline></video>`;
+    } else {
+        mediaContainer.innerHTML = `<img src="${page.mediaSrc}" alt="Tutorial">`;
+    }
+
+    // Toggle PREV button visibility
+    document.getElementById('btn-prev-tutorial').style.display = currentTutorialIndex > 0 ? 'block' : 'none';
+
+    // Change NEXT to START on the final page
+    if (currentTutorialIndex === currentTutorialPages.length - 1) {
+        document.getElementById('btn-next-tutorial').innerText = 'BEGIN >>';
+    } else {
+        document.getElementById('btn-next-tutorial').innerText = 'NEXT >>';
+    }
+}
+
+document.getElementById('btn-prev-tutorial').onclick = () => {
+    if (currentTutorialIndex > 0) {
+        currentTutorialIndex--;
+        renderTutorialPage();
+    }
+};
+
+document.getElementById('btn-next-tutorial').onclick = () => {
+    if (currentTutorialIndex < currentTutorialPages.length - 1) {
+        currentTutorialIndex++;
+        renderTutorialPage();
+    } else {
+        // Close tutorial and unlock the game interactions
+        document.getElementById('tutorial-overlay').style.display = 'none';
+        appState = 'GAME';
+    }
+};
 
 // Camera and Global Lighting Setup
 const aspect = window.innerWidth / window.innerHeight;
@@ -409,7 +461,7 @@ function executePathMovement(path) {
             isPlayerMoving = false;
 
             if (currentLevelData.exit && player.r === currentLevelData.exit.r && player.c === currentLevelData.exit.c) {
-                document.getElementById('log').innerText = "EXTRACTION POINT REACHED. SECURING AREA...";
+                document.getElementById('log').innerText = "EXTRACTION POINT REACHED";
                 setTimeout(() => {
                     appState = 'MAP';
                     renderer.domElement.style.display = 'none';
@@ -896,7 +948,7 @@ function drawVisionCone(startR, startC, dir, length, startOffset = 1, spread = 1
 function checkPhysicalDetection() {
     const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
     if (inVision) {
-        document.getElementById('log').innerText = "CAUGHT! SYSTEM RESETTING...";
+        document.getElementById('log').innerText = "CAUGHT!";
 
         player.r = currentLevelData.spawn.r;
         player.c = currentLevelData.spawn.c;
@@ -1273,7 +1325,7 @@ window.addEventListener('mousedown', (e) => {
 
                         player.ap -= 1;
                         document.getElementById('ap-display').innerText = player.ap;
-                        document.getElementById('log').innerText = "ENCRYPTED DATAPAD ACQUIRED. DECRYPTION KEY STORED.";
+                        document.getElementById('log').innerText = "DATAPAD ACQUIRED. DECRYPTION KEY STORED.";
                         clearHighlights();
                     }
                 } else {
@@ -1312,6 +1364,8 @@ window.addEventListener('mousedown', (e) => {
                         return;
                     }
 
+                    let successMessage = "";
+
                     if (activeTerminal.action === "unlock_door") {
                         const targetDoor = currentLevelData.doors.find(d => d.id === activeTerminal.targetId);
                         if (targetDoor) {
@@ -1321,13 +1375,12 @@ window.addEventListener('mousedown', (e) => {
                             targetDoor.rightMesh.material.color.setHex(0x00ffcc);
                             targetDoor.rightMesh.material.emissive.setHex(0x00ffcc);
                         }
-                        document.getElementById('log').innerText = "CORE COMPROMISED. DOOR UNLOCKED.";
+                        successMessage = "CORE COMPROMISED. DOOR UNLOCKED.";
 
-                        // Camera Shutdown Logic
                     } else if (activeTerminal.action === "disable_camera") {
                         const targetCam = currentLevelData.cameras.find(c => c.id === activeTerminal.targetId);
                         if (targetCam) targetCam.active = false;
-                        document.getElementById('log').innerText = "CORE COMPROMISED. CAMERA NETWORK OFFLINE.";
+                        successMessage = "CORE COMPROMISED. CAMERA NETWORK OFFLINE.";
 
                     } else if (activeTerminal.action === "rotate_arm") {
                         if (currentLevelData.robotArm) {
@@ -1335,14 +1388,22 @@ window.addEventListener('mousedown', (e) => {
                             currentLevelData.map[8][7] = 0;
                             currentLevelData.map[7][7] = 0;
                         }
-                        document.getElementById('log').innerText = "CORE COMPROMISED. MACHINERY OVERRIDE ENGAGED.";
+                        successMessage = "CORE COMPROMISED. MACHINERY OVERRIDE ENGAGED.";
                     }
 
+                    // 1. Switch back to physical mode (this sets "AVOID DETECTION.")
+                    toggleMode('PHYSICAL');
+                    // 2. Update vision (so disabled cameras instantly drop their red cones)
+                    updateVision();
+                    // 3. Overwrite the default log with your specific success message
+                    document.getElementById('log').innerText = successMessage;
+
                 } else {
+                    // Jacking out early
+                    toggleMode('PHYSICAL');
+                    updateVision();
                     document.getElementById('log').innerText = "JACKED OUT OF NETRUN.";
                 }
-                toggleMode('PHYSICAL');
-                updateVision();
                 return;
             }
 
@@ -1391,7 +1452,7 @@ window.addEventListener('keydown', (e) => {
     // Check if the Spacebar was pressed
     if (e.code === 'Space') {
         e.preventDefault(); // Prevents the browser from scrolling down the page!
-        
+
         // Simulate a click on the End Turn button
         document.getElementById('btn-end-turn').click();
     }
@@ -1611,7 +1672,7 @@ document.getElementById('btn-sonar').onclick = () => {
     if (currentMode !== 'NETRUN' || isScanning) return;
 
     isScanning = true;
-    document.getElementById('log').innerText = "SONAR.EXE: SCANNING ARCH_STACK...";
+    document.getElementById('log').innerText = "SONAR.EXE: SCANNING ARCHITECTURE...";
     document.getElementById('log').className = 'log log-netrun';
 
     enemies.forEach(en => {
@@ -1653,7 +1714,7 @@ document.getElementById('btn-scales').onclick = () => {
     }
 
     player.statuses.scalesBarrier = 2;
-    document.getElementById('log').innerText = "SCALES.EXE: NEURAL BARRIER ACTIVATED. ABSORB NEXT 2 SPIKES.";
+    document.getElementById('log').innerText = "SCALES.EXE: ABSORB NEXT 2 SPIKES.";
     document.getElementById('log').className = 'log log-netrun';
 
     consumeNetAction(1);
@@ -1675,7 +1736,7 @@ document.getElementById('btn-swim').onclick = () => {
 
     if (player.floor < currentTotalFloors - 1) {
         if (!canChangeFloor(player.floor + 1)) {
-            document.getElementById('log').innerText = "SWIM.EXE FAILED: FLOOR OCCUPIED."; return;
+            document.getElementById('log').innerText = "SWIM.EXE FAILED: CELL OCCUPIED."; return;
         }
 
         player.floor++;
@@ -1708,7 +1769,7 @@ document.getElementById('btn-harpoon').onclick = () => {
     const dx = Math.abs(player.c - selectedTarget.data.x);
     const dz = Math.abs(player.r - selectedTarget.data.z);
 
-    if (selectedTarget.data.floor === player.floor && (dx <= 3 && dz <= 3)) {
+    if (selectedTarget.data.floor === player.floor) {
         selectedTarget.data.hp -= 3;
 
         netSlashEffect.position.set(selectedTarget.group.position.x, 0.6, selectedTarget.group.position.z);
@@ -1718,14 +1779,12 @@ document.getElementById('btn-harpoon').onclick = () => {
             selectedTarget.data.active = false;
             selectedTarget.group.visible = false;
             selectedTarget = null;
-            document.getElementById('log').innerText = "TARGET TERMINATED BY HARPOON.";
+            document.getElementById('log').innerText = "TARGET TERMINATED";
         } else {
-            document.getElementById('log').innerText = `HARPOON HIT. ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`;
+            document.getElementById('log').innerText = `ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`;
         }
 
         consumeNetAction(1);
-    } else {
-        document.getElementById('log').innerText = "ERROR: TARGET OUT OF HARPOON RANGE (3 TILES)";
     }
 };
 
@@ -1750,7 +1809,7 @@ document.getElementById('btn-swordfish').onclick = () => {
             selectedTarget.data.active = false;
             selectedTarget.group.visible = false;
             selectedTarget = null;
-            document.getElementById('log').innerText = "TARGET TERMINATED.";
+            document.getElementById('log').innerText = "TARGET TERMINATED";
         } else document.getElementById('log').innerText = `ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`;
 
         consumeNetAction(1);
@@ -1793,7 +1852,7 @@ document.getElementById('btn-end-turn').onclick = () => {
         checkPhysicalDetection();
 
     } else if (currentMode === 'NETRUN') {
-        document.getElementById('log').innerText = "NET TURN ENDED. ICE PROCESSING...";
+        document.getElementById('log').innerText = "NET TURN ENDED";
         player.netAp = 0;
         consumeNetAction(0);
     }
@@ -1806,7 +1865,7 @@ document.getElementById('btn-end-turn').onclick = () => {
 function animate() {
     requestAnimationFrame(animate);
 
-    if (appState !== 'GAME') return;
+    if (appState !== 'GAME' && appState !== 'TUTORIAL') return;
 
     const targetPhysOp = currentMode === 'NETRUN' ? 0.15 : 1.0;
 

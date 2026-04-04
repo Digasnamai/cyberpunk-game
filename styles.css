@@ -408,3 +408,39 @@ body {
 }
 
 .scanning-active { animation: scan-pulse 1s infinite; }
+
+.tutorial-box {
+    display: flex;
+    width: 80%;
+    max-width: 800px;
+    background: rgba(0, 15, 20, 0.95);
+    border: 2px solid #00ffcc;
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+    padding: 30px;
+    gap: 30px;
+    z-index: 51;
+}
+
+.tutorial-media {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+    border: 1px solid #00ffcc;
+    min-height: 250px;
+}
+
+.tutorial-media img, 
+.tutorial-media video {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.tutorial-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}

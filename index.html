@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>CYBERPUNK ><#></title>
+    <title>CYBERPUNK ><#>
+    </title>
     <!-- Link to our external CSS file -->
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div id="main-menu" class="screen active">
-        <h1 class="title-glitch">CYBERPUNK ><#></h1>
+        <h1 class="title-glitch">CYBERPUNK ><#>
+        </h1>
         <div class="menu-options">
             <button class="btn menu-btn" id="btn-new-game">NEW GAME</button>
             <button class="btn menu-btn" id="btn-level-select">WORLD MAP</button>
@@ -57,15 +61,38 @@
             <button class="btn map-node" data-level="3">3. CONTAINER YARD</button>
             <button class="btn map-node" data-level="4">4. TESTING GROUNDS</button>
             <button class="btn map-node" data-level="5">5. CONTROL TOWER</button>
-            <button class="btn menu-btn" id="btn-back-menu" style="margin-top: 40px; border-color: #ff0055; color: #ff0055;">BACK TO MENU</button>
+            <button class="btn menu-btn" id="btn-back-menu"
+                style="margin-top: 40px; border-color: #ff0055; color: #ff0055;">BACK TO MENU</button>
         </div>
     </div>
 
+
     <div id="game-ui" class="screen">
+
+        <div id="tutorial-overlay"
+            style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 50; justify-content: center; align-items: center; pointer-events: all;">
+            <div class="tutorial-box">
+                <div class="tutorial-media" id="tutorial-media-container">
+                    <!-- Image/Video injected here -->
+                </div>
+                <div class="tutorial-content">
+                    <h2 id="tutorial-title" style="color: #ff0055; margin-top: 0;"></h2>
+                    <div id="tutorial-text" class="dialogue-text" style="margin-bottom: 20px;"></div>
+                    <div style="display: flex; gap: 10px; margin-top: auto;">
+                        <button class="btn" id="btn-prev-tutorial">
+                            << PREV</button>
+                                <button class="btn" id="btn-next-tutorial">NEXT >></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="ui-left">
             <div class="phys-only" style="font-size: 14px;">ACTION POINTS: <span id="ap-display">4</span></div>
-            <div class="net-only" style="font-size: 14px; margin-bottom: 5px; color: #00ffcc;">NET ACTIONS: <span id="net-ap-display">2</span></div>
-            <button class="btn" id="btn-end-turn" style="border-color: #fff; color: #fff; margin-bottom: 10px;">END TURN</button>
+            <div class="net-only" style="font-size: 14px; margin-bottom: 5px; color: #00ffcc;">NET ACTIONS: <span
+                    id="net-ap-display">2</span></div>
+            <button class="btn" id="btn-end-turn" style="border-color: #fff; color: #fff; margin-bottom: 10px;">END
+                TURN</button>
 
             <div class="net-only" style="font-size: 14px;">NEURAL INTEGRITY</div>
             <div class="hp-container net-only">
@@ -104,8 +131,9 @@
         } 
     } 
     </script>
-    
+
     <!-- Link to our core engine file -->
     <script type="module" src="js/main.js"></script>
 </body>
+
 </html>

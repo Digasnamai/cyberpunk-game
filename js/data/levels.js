@@ -2,6 +2,40 @@ export const LEVEL_DATA = {
     1: {
 
         spawn: { r: 0, c: 0 },
+
+        tutorial: [
+            {
+                title: "MOVEMENT [1/5]",
+                text: "Click on tiles to move arround. Action points limit your movement per turn.",
+                mediaType: "image", 
+                mediaSrc: "media/placeholder.png" 
+            },
+            {
+                title: "NETRUNNING [2/5]",
+                text: "Your path might be blocked by several obstacles, in order to deactivate them you must access a terminal, move to the bottom of it's 'NET Architecture' using 'ASCEND' and 'DIVE' and interact with it again",
+                mediaType: "image", 
+                mediaSrc: "media/placeholder.png" 
+            },
+            {
+                title: "NET PROGRAMS [3/5]",
+                text: "In order to combat ICE you are equiped with different programs, 'SONAR' scans the architecture allowing you to see different floors, 'SWIM' let's you escape an enemy into the floor below",
+                mediaType: "image", 
+                mediaSrc: "media/placeholder.png" 
+            },
+            {
+                title: "NET COMBAT [4/5]",
+                text: "There are different types of ICE and each has it's own effects, in order to combat them you can use 'SWORDFISH' to damage them at close range or 'HARPOON' for longer ranges, you can also use 'SCALES' to defend yourself",
+                mediaType: "image", 
+                mediaSrc: "media/placeholder.png" 
+            },
+            {
+                title: "STEALTH [5/5]",
+                text: "In the physical space avoid the red visual cones of security guards and cameras. Detection resets you to the start of the level.",
+                mediaType: "image", 
+                mediaSrc: "media/placeholder.png" 
+            }
+        ],
+
         map: [
             //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
             [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1], //0
