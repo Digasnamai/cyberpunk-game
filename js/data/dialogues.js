@@ -9,14 +9,14 @@ export const introDialogue = [
 ];
 
 export const mission1Dialogue = [
-    { side: "right", name: "HANDLER", text: "Listen up, Nyx. We're both tired of depending on corps for survival." },
-    { side: "left", name: "NYX", text: "Tell me about it. What's the target?" },
-    { side: "right", name: "HANDLER", text: "A Militech facility at the port of Leças. There's valuable data inside. We steal it, sell it to the highest bidder, and buy our freedom." },
-    { side: "left", name: "NYX", text: "I'm at the perimeter now. Jacking in." }
+    { side: "right", name: "Character", text: "Dialogue 1" },
+    { side: "left", name: "NYX", text: "Dialogue 2" },
+    { side: "right", name: "Character", text: "Dialogue 1" },
+    { side: "left", name: "NYX", text: "Dialogue 2" }
 ];
 
 export const mission2Dialogue = [
-    { side: "right", name: "HANDLER", text: "Good job on the entry. You are in the administrative wing." },
-    { side: "left", name: "NYX", text: "It's crawling with guards. And I see a camera grid." },
-    { side: "right", name: "HANDLER", text: "Find the local security terminal to blind the cameras." }
+    { side: "right", name: "Character", text: "Dialogue 1" },
+    { side: "left", name: "NYX", text: "Dialogue 2" },
+    { side: "right", name: "Character", text: "Dialogue 1" }
 ];
