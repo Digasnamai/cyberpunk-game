@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CYBERPUNK ><#></title>
+    <!-- Link to our external CSS file -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="main-menu" class="screen active">
+        <h1 class="title-glitch">CYBERPUNK ><#></h1>
+        <div class="menu-options">
+            <button class="btn menu-btn" id="btn-new-game">NEW GAME</button>
+            <button class="btn menu-btn" id="btn-level-select">WORLD MAP</button>
+        </div>
+    </div>
+
+    <div id="dialogue-screen" class="screen">
+        <div id="intro-map-container">
+            <img id="map-base" src="media/map-base.png" class="map-layer">
+            <img id="map-matosinhos" src="media/map-matosinhos.png" class="map-layer map-overlay">
+            <img id="map-militech" src="media/map-militech.png" class="map-layer map-overlay">
+            <img id="map-asec" src="media/map-asec.png" class="map-layer map-overlay">
+        </div>
+
+        <div class="dialogue-box">
+            <div id="dialogue-speaker" class="dialogue-speaker">SYSTEM</div>
+            <div id="dialogue-text" class="dialogue-text"></div>
+            <button class="btn" id="btn-next-dialogue" style="align-self: flex-end; margin-top: 15px;">NEXT >></button>
+        </div>
+    </div>
+
+    <div id="character-dialogue-screen" class="screen">
+        <div class="dialogue-container-split" id="split-container">
+            <div class="character-pane" id="pane-left">
+                <div class="portrait" id="portrait-left">NYX</div>
+                <div class="dialogue-box-split" id="box-left">
+                    <div class="dialogue-text" id="text-left"></div>
+                </div>
+            </div>
+
+            <div class="character-pane inactive" id="pane-right">
+                <div class="portrait" id="portrait-right">HANDLER</div>
+                <div class="dialogue-box-split" id="box-right">
+                    <div class="dialogue-text" id="text-right"></div>
+                </div>
+            </div>
+        </div>
+        <div class="dialogue-instructions">&lt;Click anywhere to continue&gt;</div>
+    </div>
+
+    <div id="world-map" class="screen">
+        <h2 style="color: #00ffcc; margin-bottom: 30px;">LEÇAS PORT REGION MAP</h2>
+        <div class="map-container">
+            <button class="btn map-node" data-level="1">1. MANUFACTURING FACILITY</button>
+            <button class="btn map-node" data-level="2">2. ADMINISTRATIVE BUILDING</button>
+            <button class="btn map-node" data-level="3">3. CONTAINER YARD</button>
+            <button class="btn map-node" data-level="4">4. TESTING GROUNDS</button>
+            <button class="btn map-node" data-level="5">5. CONTROL TOWER</button>
+            <button class="btn menu-btn" id="btn-back-menu" style="margin-top: 40px; border-color: #ff0055; color: #ff0055;">BACK TO MENU</button>
+        </div>
+    </div>
+
+    <div id="game-ui" class="screen">
+        <div id="ui-left">
+            <div class="phys-only" style="font-size: 14px;">ACTION POINTS: <span id="ap-display">4</span></div>
+            <div class="net-only" style="font-size: 14px; margin-bottom: 5px; color: #00ffcc;">NET ACTIONS: <span id="net-ap-display">2</span></div>
+            <button class="btn" id="btn-end-turn" style="border-color: #fff; color: #fff; margin-bottom: 10px;">END TURN</button>
+
+            <div class="net-only" style="font-size: 14px;">NEURAL INTEGRITY</div>
+            <div class="hp-container net-only">
+                <div id="hp-bar"></div>
+            </div>
+
+            <button class="btn net-only" id="btn-up">ASCEND</button>
+            <button class="btn net-only" id="btn-down">DIVE</button>
+
+            <div style="height: 15px;" class="net-only"></div>
+
+            <button class="btn net-only" id="btn-sonar">SONAR.EXE</button>
+            <button class="btn net-only" id="btn-swim">SWIM.EXE</button>
+            <button class="btn net-only attack-btn" id="btn-harpoon">HARPOON.EXE</button>
+            <button class="btn net-only attack-btn" id="btn-swordfish">SWORDFISH.EXE</button>
+            <button class="btn net-only defense-btn" id="btn-scales">SCALES.EXE</button>
+        </div>
+
+        <div id="ui-right" class="net-only">
+            <div id="stack-container"></div>
+        </div>
+
+        <div id="log-wrapper" class="log-wrapper">
+            <div id="log-history" class="log-history"></div>
+            <div id="log-current" class="log-current"></div>
+        </div>
+        <div id="log" style="display: none;"></div>
+    </div>
+
+    <!-- Import Map for Three.js -->
+    <script type="importmap">
+    { 
+        "imports": { 
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        } 
+    } 
+    </script>
+    
+    <!-- Link to our core engine file -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
