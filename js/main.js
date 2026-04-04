@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
-// Import our custom data files!
 import { LEVEL_DATA } from './data/levels.js';
 import { introDialogue, mission1Dialogue, mission2Dialogue } from './data/dialogues.js';
 
@@ -11,10 +10,8 @@ import { introDialogue, mission1Dialogue, mission2Dialogue } from './data/dialog
 // ==========================================
 let currentMode = 'PHYSICAL'; // 'PHYSICAL' or 'NETRUN'
 
-// Use a single scene to handle both physical and AR overlay rendering
 const scene = new THREE.Scene();
 
-// Preload Custom Models
 let models = { hellhound: null, asp: null, guard: null, level1: null };
 const loader = new GLTFLoader();
 
@@ -49,7 +46,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 renderer.domElement.style.display = 'none';
 
-// App State (Menu -> Map -> Dialogue -> Game)
 let appState = 'MENU';
 let currentLevelIndex = 1;
 let currentTutorialPages = [];
@@ -66,9 +62,8 @@ function switchScreen(screenId) {
 const logWrapper = document.getElementById('log-wrapper');
 const logHistory = document.getElementById('log-history');
 const logCurrent = document.getElementById('log-current');
-const proxyLog = document.getElementById('log');
 
-// Toggle expanded view on click
+// Restore the click-to-expand functionality
 logWrapper.onclick = () => {
     logWrapper.classList.toggle('expanded');
     if (logWrapper.classList.contains('expanded')) {
@@ -76,39 +71,28 @@ logWrapper.onclick = () => {
     }
 };
 
-let lastLogMsg = "";
-let lastLogClass = "normal";
+function pushToLog(message, isAlert = false) {
+    // ANTI-SPAM: Don't push if it's the exact same message
+    if (logCurrent.innerText === message) return;
 
-// Watch the hidden proxy log for changes made by the game engine
-const logObserver = new MutationObserver(() => {
-    const msg = proxyLog.innerText;
-    const isNetrun = proxyLog.className.includes('log-netrun');
-    const currentClassState = isNetrun ? 'netrun' : 'normal';
-
-    if (msg !== lastLogMsg || currentClassState !== lastLogClass) {
-        if (msg !== lastLogMsg) {
-            if (msg.startsWith(lastLogMsg) && lastLogMsg !== "") {
-                logCurrent.innerText = msg;
-            } else {
-                if (lastLogMsg !== "") {
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'log-item' + (lastLogClass === 'netrun' ? ' netrun' : '');
-                    historyItem.innerText = lastLogMsg;
-                    logHistory.appendChild(historyItem);
-                }
-                logCurrent.innerText = msg;
-            }
-            lastLogMsg = msg;
-        }
-
-        logCurrent.className = 'log-current' + (isNetrun ? ' netrun' : '');
-        lastLogClass = currentClassState;
-
-        if (logWrapper.classList.contains('expanded')) logHistory.scrollTop = logHistory.scrollHeight;
+    if (logCurrent.innerText.trim() !== "") {
+        const historyEntry = document.createElement('div');
+        
+        // Inherit the class from the current log so colors match!
+        historyEntry.className = logCurrent.className.includes('netrun') ? 'log-item netrun' : 'log-item';
+        historyEntry.innerText = logCurrent.innerText;
+        
+        logHistory.appendChild(historyEntry);
     }
-});
 
-logObserver.observe(proxyLog, { childList: true, characterData: true, subtree: true, attributes: true });
+    logCurrent.innerText = message;
+    logCurrent.className = isAlert ? 'log-current netrun' : 'log-current';
+
+    // Keep it scrolled down if the user has it expanded
+    if (logWrapper.classList.contains('expanded')) {
+        logHistory.scrollTop = logHistory.scrollHeight;
+    }
+}
 
 // ==========================================
 // NARRATIVE ENGINE
@@ -142,7 +126,6 @@ function showDialogue(dialogueArray, onCompleteCallback) {
             const line = dialogueArray[currentDialogueIndex];
             speakerElement.innerText = line.speaker;
 
-            // Handle Map Overlay Logic
             if (line.showMap) {
                 mapLayers.forEach(layer => {
                     if (layer.id === 'map-base' || (line.activeLayers && line.activeLayers.includes(layer.id))) {
@@ -152,13 +135,12 @@ function showDialogue(dialogueArray, onCompleteCallback) {
                     }
                 });
             } else {
-                // Let CSS opacity handle the hiding transition
                 mapLayers.forEach(l => l.classList.remove('visible'));
             }
 
             typeWriter(line.text, 0);
         } else {
-            mapContainer.style.display = 'none'; // Cleanup
+            mapContainer.style.display = 'none'; 
             onCompleteCallback();
         }
     }
@@ -177,7 +159,6 @@ function showDialogue(dialogueArray, onCompleteCallback) {
     displayCurrentLine();
 }
 
-// Split-screen character dialogue system
 function showCharacterDialogue(dialogueArray, onCompleteCallback) {
     switchScreen('character-dialogue-screen');
     currentDialogueIndex = 0;
@@ -272,7 +253,6 @@ function startLevel(levelNum) {
     currentLevelIndex = levelNum;
     currentLevelData = LEVEL_DATA[levelNum];
 
-    // Reset Player Stats
     player.r = currentLevelData.spawn.r;
     player.c = currentLevelData.spawn.c;
     player.hp = player.maxHp;
@@ -281,7 +261,6 @@ function startLevel(levelNum) {
     document.getElementById('hp-bar').style.width = "100%";
     document.getElementById('ap-display').innerText = player.ap;
 
-    // Boot the 3D Engine immediately so it renders in the background!
     appState = 'GAME';
     switchScreen('game-ui');
     renderer.domElement.style.display = 'block';
@@ -290,9 +269,8 @@ function startLevel(levelNum) {
     initNetrun();
     toggleMode('PHYSICAL');
 
-    // Check for Tutorial Array
     if (currentLevelData.tutorial && currentLevelData.tutorial.length > 0) {
-        appState = 'TUTORIAL'; // Prevents mouse clicks on the grid
+        appState = 'TUTORIAL';
         currentTutorialPages = currentLevelData.tutorial;
         currentTutorialIndex = 0;
 
@@ -313,10 +291,8 @@ function renderTutorialPage() {
         mediaContainer.innerHTML = `<img src="${page.mediaSrc}" alt="Tutorial">`;
     }
 
-    // Toggle PREV button visibility
     document.getElementById('btn-prev-tutorial').style.display = currentTutorialIndex > 0 ? 'block' : 'none';
 
-    // Change NEXT to START on the final page
     if (currentTutorialIndex === currentTutorialPages.length - 1) {
         document.getElementById('btn-next-tutorial').innerText = 'BEGIN >>';
     } else {
@@ -336,13 +312,11 @@ document.getElementById('btn-next-tutorial').onclick = () => {
         currentTutorialIndex++;
         renderTutorialPage();
     } else {
-        // Close tutorial and unlock the game interactions
         document.getElementById('tutorial-overlay').style.display = 'none';
         appState = 'GAME';
     }
 };
 
-// Camera and Global Lighting Setup
 const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera(-8 * aspect, 8 * aspect, 8, -8, 0.1, 1000);
 camera.position.set(10, 10, 10);
@@ -360,7 +334,7 @@ let currentLevelData = null;
 
 let player = {
     r: 4, c: 0, floor: 0, hp: 15, maxHp: 15, ap: 4, maxAp: 4, netAp: 2, maxNetAp: 2,
-    inventory: [], // Stores collected datapad IDs
+    inventory: [], 
     statuses: {
         disabledPrograms: { swordfish: 0, harpoon: 0, scales: 0, swim: 0 },
         burning: 0, krakenActive: false, scorpionActive: false, scalesBarrier: 0,
@@ -372,7 +346,6 @@ let playerGroup, physBody, netBody1, netBody2;
 let physGridGroup = new THREE.Group();
 let visionGroup = new THREE.Group();
 
-// Pathfinding Logic
 let currentPath = [];
 let hoveredTile = null;
 let isPlayerMoving = false;
@@ -383,23 +356,19 @@ function isWalkable(r, c) {
     const type = currentLevelData.map[r][c];
     if (type === 1 || type === 2 || type === 8 || type === 6) return false;
 
-    // Locked doors are solid
     if (type === 3) {
         const door = currentLevelData.doors.find(d => d.r === r && d.c === c);
         if (door && !door.unlocked) return false;
     }
 
-    // Empty pits are solid (unless there is a platform there)
     if (type === 4) {
         const plat = currentLevelData.platforms.find(p => p.r === r && p.c === c);
         if (!plat) return false;
     }
 
-    // Check for collision with entities
     if (currentLevelData.guards && currentLevelData.guards.some(g => g.r === r && g.c === c)) return false;
     if (currentLevelData.drones.some(d => d.r === r && d.c === c)) return false;
 
-    // Vision Cones act as invisible walls to prevent walking through sightlines
     const inVision = visionGroup.children.some(v => v.userData.isCone && v.userData.r === r && v.userData.c === c);
     if (inVision) return false;
 
@@ -430,7 +399,7 @@ function getPath(startR, startC, targetR, targetC, maxAP) {
             }
         }
     }
-    return null; // No safe path found within AP limit
+    return null; 
 }
 
 function clearHighlights() {
@@ -445,7 +414,6 @@ function clearHighlights() {
     currentPath = [];
 }
 
-// Step-by-step movement executor
 function executePathMovement(path) {
     isPlayerMoving = true;
     player.ap -= path.length;
@@ -461,7 +429,7 @@ function executePathMovement(path) {
             isPlayerMoving = false;
 
             if (currentLevelData.exit && player.r === currentLevelData.exit.r && player.c === currentLevelData.exit.c) {
-                document.getElementById('log').innerText = "EXTRACTION POINT REACHED";
+                pushToLog("EXTRACTION POINT REACHED", false);
                 setTimeout(() => {
                     appState = 'MAP';
                     renderer.domElement.style.display = 'none';
@@ -474,12 +442,10 @@ function executePathMovement(path) {
             return;
         }
 
-        // Move Player
         player.r = path[stepIndex].r;
         player.c = path[stepIndex].c;
         stepIndex++;
 
-        // Move Patrolling Guards Simultaneously
         if (currentLevelData.guards) {
             currentLevelData.guards.forEach(guard => {
                 if (guard.path) {
@@ -500,10 +466,8 @@ function executePathMovement(path) {
             });
         }
 
-        // Update their vision cones from their new positions
         updateVision();
 
-        // Abort movement if caught mid-step
         const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
         if (inVision) {
             checkPhysicalDetection();
@@ -511,7 +475,6 @@ function executePathMovement(path) {
             return;
         }
 
-        // Wait 150ms for the meshes to visually slide before calculating the next step
         setTimeout(nextStep, 150);
     }
 
@@ -522,7 +485,6 @@ function buildPhysicalWorld() {
     physGridGroup.clear();
     visionGroup.clear();
 
-    // Remove the player mesh from the previous level to prevent ghosting
     if (playerGroup) {
         scene.remove(playerGroup);
     }
@@ -530,7 +492,6 @@ function buildPhysicalWorld() {
     const rows = currentLevelData.map.length;
     const cols = currentLevelData.map[0].length;
 
-    // Inject 3D environment models and scan for elevation
     let envMesh = null;
     currentLevelData.heightMap = [];
 
@@ -542,7 +503,6 @@ function buildPhysicalWorld() {
         currentLevelData.robotArm = envMesh.getObjectByName("RoboticArm");
         if (currentLevelData.robotArm) {
             currentLevelData.robotArmTargetRot = currentLevelData.robotArm.rotation.y;
-            // Hide environmental interactables temporarily so raycasters hit the floor mesh
             currentLevelData.robotArm.visible = false;
         }
 
@@ -552,7 +512,6 @@ function buildPhysicalWorld() {
     const heightRaycaster = new THREE.Raycaster();
     const downVector = new THREE.Vector3(0, -1, 0);
 
-    // Create a Global Normal Map to store slope angles
     currentLevelData.normalMap = [];
 
     for (let r = 0; r < rows; r++) {
@@ -562,7 +521,6 @@ function buildPhysicalWorld() {
         for (let c = 0; c < cols; c++) {
             const type = currentLevelData.map[r][c];
 
-            // 3-Point Raycaster check to determine tile elevation and slope
             let tileY = 0;
             let tileNormal = new THREE.Vector3(0, 1, 0);
 
@@ -583,11 +541,9 @@ function buildPhysicalWorld() {
                 }
             }
 
-            // Save height and slope to the global level data
             currentLevelData.heightMap[r][c] = tileY;
             currentLevelData.normalMap[r][c] = tileNormal;
 
-            // Walkable Tiles
             if (type !== 1 && type !== 4) {
                 const isExit = currentLevelData.exit && currentLevelData.exit.r === r && currentLevelData.exit.c === c;
 
@@ -617,14 +573,12 @@ function buildPhysicalWorld() {
 
                 floor.add(line);
 
-                // Apply the pre-calculated slope from memory
                 const up = new THREE.Vector3(0, 1, 0);
                 floor.quaternion.setFromUnitVectors(up, tileNormal);
 
                 physGridGroup.add(floor);
             }
 
-            // Terminal
             if (type === 2) {
                 const terminal = new THREE.Mesh(
                     new THREE.BoxGeometry(0.6, 0.8, 0.6),
@@ -635,12 +589,10 @@ function buildPhysicalWorld() {
                 physGridGroup.add(terminal);
             }
 
-            // Locked Door
             if (type === 3) {
                 const physDoorGroup = new THREE.Group();
                 physDoorGroup.position.set(c, tileY + 0.75, r);
 
-                // Rotate the door based on layout direction
                 const dData = currentLevelData.doors.find(d => d.r === r && d.c === c);
                 if (dData && dData.dir === 'vertical') {
                     physDoorGroup.rotation.y = Math.PI / 2;
@@ -668,7 +620,6 @@ function buildPhysicalWorld() {
                 }
             }
 
-            // Security Camera
             if (type === 5) {
                 const camMesh = new THREE.Mesh(
                     new THREE.BoxGeometry(0.4, 0.4, 0.4),
@@ -683,7 +634,6 @@ function buildPhysicalWorld() {
                 physGridGroup.add(camMesh);
             }
 
-            // Datapad / Passwords
             if (type === 6) {
                 const pad = new THREE.Mesh(
                     new THREE.OctahedronGeometry(0.2),
@@ -705,7 +655,6 @@ function buildPhysicalWorld() {
         currentLevelData.robotArm.visible = true;
     }
 
-    // Build Dynamic Platforms
     currentLevelData.platforms.forEach(plat => {
         const mesh = new THREE.Mesh(
             new THREE.BoxGeometry(0.95, 0.15, 0.95),
@@ -728,7 +677,6 @@ function buildPhysicalWorld() {
         physGridGroup.add(mesh);
     });
 
-    // Guard Iteration
     if (currentLevelData.guards) {
         currentLevelData.guards.forEach(guard => {
             let guardTileY = 0;
@@ -736,7 +684,6 @@ function buildPhysicalWorld() {
                 guardTileY = currentLevelData.heightMap[guard.r][guard.c] || 0;
             }
 
-            // Bridge the pathfinding system to the vision system
             if (guard.path && !guard.dirs) {
                 guard.dirs = [guard.path[0].dir];
                 guard.dirIdx = 0;
@@ -762,7 +709,6 @@ function buildPhysicalWorld() {
                 guardMesh.position.set(guard.c, guardTileY + 0.5, guard.r);
             }
 
-            // Set starting rotation and save target angles
             guardMesh.rotation.y = initRot;
             guard.targetRot = initRot;
 
@@ -780,7 +726,6 @@ function buildPhysicalWorld() {
     physBody.position.y = 0.5;
     playerGroup.add(physBody);
 
-    // Layer 3 (Player renders on top of physical objects)
     netBody1 = new THREE.Mesh(
         new THREE.IcosahedronGeometry(0.2),
         new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, depthTest: false, depthWrite: false })
@@ -805,7 +750,6 @@ function buildPhysicalWorld() {
 // GUARD & DETECTION LOGIC 
 // ==========================================
 function updateVision() {
-    // Wipe the drawn tiles cache for the new turn
     if (window.drawnVisionTiles) window.drawnVisionTiles.clear();
 
     visionGroup.clear();
@@ -852,12 +796,10 @@ function updateVision() {
                     if (vR < 0 || vR >= currentLevelData.map.length || vC < 0 || vC >= currentLevelData.map[0].length) continue;
                     if (currentLevelData.map[vR][vC] === 1) continue;
 
-                    // Check the cache before drawing drone tiles
                     const tileKey = `${vR},${vC}`;
                     if (!window.drawnVisionTiles.has(tileKey)) {
                         window.drawnVisionTiles.add(tileKey);
 
-                        // Bake the rotation directly into the geometry
                         const droneGeo = new THREE.PlaneGeometry(0.9, 0.9);
                         droneGeo.rotateX(-Math.PI / 2);
 
@@ -884,7 +826,6 @@ function updateVision() {
     }
 }
 
-// Helper function to draw the red tiles with adjustable spread
 function drawVisionCone(startR, startC, dir, length, startOffset = 1, spread = 1) {
     let dr = 0, dc = 0;
     let orthoR = 0, orthoC = 0;
@@ -948,7 +889,7 @@ function drawVisionCone(startR, startC, dir, length, startOffset = 1, spread = 1
 function checkPhysicalDetection() {
     const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
     if (inVision) {
-        document.getElementById('log').innerText = "CAUGHT!";
+        pushToLog("CAUGHT!", false);
 
         player.r = currentLevelData.spawn.r;
         player.c = currentLevelData.spawn.c;
@@ -983,7 +924,6 @@ function processMovingPlatforms() {
         if (wasPlayerOnPlatform) {
             player.r = plat.r;
             player.c = plat.c;
-            document.getElementById('log').innerText = "PLATFORM IN MOTION.";
         }
     });
 }
@@ -1058,7 +998,6 @@ function spawnICE(f, x, z) {
         }
     }
 
-    // Force ICE models to render strictly on top of the physical world
     b.traverse((child) => {
         if (child.isMesh) {
             child.renderOrder = 1000;
@@ -1090,7 +1029,6 @@ let selectedTarget = null;
 let isScanning = false;
 let netLight;
 
-// Track the physical height of the active terminal
 let netrunBaseY = 0;
 
 scene.add(new THREE.AmbientLight(0x404040, 2));
@@ -1158,7 +1096,6 @@ function generateMirroredNetrun(terminalData) {
                     tile.position.set(wC, 0.02, wR);
                     tile.renderOrder = 998;
 
-                    // Save the base opacity/emissive properties for animations
                     tile.userData = { x: wC, z: wR, baseOpacity: 0.1, baseEmissive: 0.1 };
                     group.add(tile);
 
@@ -1211,34 +1148,32 @@ function toggleMode(mode) {
     currentMode = mode;
     const isNet = mode === 'NETRUN';
 
-    // Cleanup physical UI elements
     if (typeof clearHighlights === "function") clearHighlights();
     hoveredTile = null;
 
     document.querySelectorAll('.net-only').forEach(el => el.style.display = isNet ? (el.tagName === 'DIV' ? 'flex' : 'block') : 'none');
     document.querySelectorAll('.phys-only').forEach(el => el.style.display = !isNet ? (el.tagName === 'DIV' ? 'flex' : 'block') : 'none');
 
-    const log = document.getElementById('log');
-    log.innerText = isNet ? "CONNECTION ESTABLISHED. BYPASS SYSTEM CORE." : "AVOID DETECTION.";
-    log.className = isNet ? 'log log-netrun' : 'log';
+    const logCurrent = document.getElementById('log-current');
+    isNet ? pushToLog("CONNECTION ESTABLISHED. BYPASS SYSTEM CORE.", true) : pushToLog("AVOID DETECTION.", false);
+    logCurrent.className = isNet ? 'log-current netrun' : 'log-current';
 }
 
 function takeDamage(amt) {
     if (player.statuses.scalesBarrier > 0) {
         player.statuses.scalesBarrier--;
-        document.getElementById('log').innerText = `SCALES.EXE ABSORBED DAMAGE! (${player.statuses.scalesBarrier} STACKS LEFT)`;
-        document.getElementById('log').className = 'log log-netrun-alert';
+        pushToLog(`SCALES.EXE ABSORBED DAMAGE! (${player.statuses.scalesBarrier} SCALES LEFT)`, true);
         return;
     }
 
     player.hp -= amt;
     document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
-    document.getElementById('log').innerText = `CRITICAL: NEURAL SPIKE! -${amt} HP`;
-    document.getElementById('log').className = 'log log-netrun';
+    
+    pushToLog(`CRITICAL: NEURAL SPIKE! -${amt} HP`, true);
 
     if (player.hp <= 0) {
-        document.getElementById('log').innerText = "FATAL ERROR. NEURAL LINK SEVERED.";
-        setTimeout(() => location.reload(), 2000);
+        pushToLog("FATAL ERROR. NEURAL LINK SEVERED.", true);
+        setTimeout(() => location.reload(), 2000); 
     }
 }
 
@@ -1253,7 +1188,6 @@ window.addEventListener('mousemove', (e) => {
     if (intersects.length > 0) {
         const data = intersects[0].object.userData;
 
-        // Safely ignore non-grid meshes
         if (data.r === undefined || data.c === undefined) return;
 
         if (hoveredTile !== `${data.r},${data.c}`) {
@@ -1309,12 +1243,11 @@ window.addEventListener('mousedown', (e) => {
                         clearHighlights();
                     }
                 } else {
-                    document.getElementById('log').innerText = "TOO FAR FROM TERMINAL. MOVE CLOSER.";
+                    pushToLog("TOO FAR FROM TERMINAL. MOVE CLOSER.", false);
                 }
                 return;
             }
 
-            // Collect the Datapad
             if (type === 6) {
                 const dist = Math.abs(player.r - data.r) + Math.abs(player.c - data.c);
                 if (dist <= 1) {
@@ -1325,16 +1258,15 @@ window.addEventListener('mousedown', (e) => {
 
                         player.ap -= 1;
                         document.getElementById('ap-display').innerText = player.ap;
-                        document.getElementById('log').innerText = "DATAPAD ACQUIRED. DECRYPTION KEY STORED.";
+                        pushToLog("DATAPAD ACQUIRED. DECRYPTION KEY STORED.", false);
                         clearHighlights();
                     }
                 } else {
-                    document.getElementById('log').innerText = "TOO FAR FROM DATAPAD.";
+                    pushToLog("TOO FAR FROM DATAPAD.", false);
                 }
                 return;
             }
 
-            // Execute the pre-calculated path
             if (currentPath && currentPath.length > 0) {
                 const lastStep = currentPath[currentPath.length - 1];
 
@@ -1346,7 +1278,7 @@ window.addEventListener('mousedown', (e) => {
 
             if (data.r === player.r && data.c === player.c) return;
 
-            document.getElementById('log').innerText = "INVALID MOVE. PATH BLOCKED OR NO AP.";
+            pushToLog("INVALID MOVE. PATH BLOCKED OR NO AP.", false);
         }
     }
     else if (currentMode === 'NETRUN') {
@@ -1357,10 +1289,9 @@ window.addEventListener('mousedown', (e) => {
             if (data.isTerminal) {
                 if (player.floor === currentTotalFloors - 1) {
 
-                    // Combat Lockout Check
                     const inCombat = enemies.some(en => en.data.active && en.data.isAlerted);
                     if (inCombat) {
-                        document.getElementById('log').innerText = "ACCESS DENIED: COMBAT DETECTED. PURGE ICE FIRST.";
+                        pushToLog("ACCESS DENIED: COMBAT DETECTED. PURGE ICE FIRST.", true);
                         return;
                     }
 
@@ -1391,18 +1322,14 @@ window.addEventListener('mousedown', (e) => {
                         successMessage = "CORE COMPROMISED. MACHINERY OVERRIDE ENGAGED.";
                     }
 
-                    // 1. Switch back to physical mode (this sets "AVOID DETECTION.")
                     toggleMode('PHYSICAL');
-                    // 2. Update vision (so disabled cameras instantly drop their red cones)
                     updateVision();
-                    // 3. Overwrite the default log with your specific success message
-                    document.getElementById('log').innerText = successMessage;
+                    pushToLog(successMessage, false);
 
                 } else {
-                    // Jacking out early
                     toggleMode('PHYSICAL');
                     updateVision();
-                    document.getElementById('log').innerText = "JACKED OUT OF NETRUN.";
+                    pushToLog("JACKED OUT OF NETRUN.", false);
                 }
                 return;
             }
@@ -1410,28 +1337,26 @@ window.addEventListener('mousedown', (e) => {
             const clickedEnemy = enemies.find(e => e.data.active && e.data.floor === player.floor && e.data.x === data.x && e.data.z === data.z);
             if (clickedEnemy) {
                 selectedTarget = clickedEnemy;
-                document.getElementById('log').innerText = "TARGET LOCKED: ICE_UNIT.";
+                pushToLog("TARGET LOCKED: ICE_UNIT.", true);
                 return;
             }
 
             const dist = Math.abs(player.r - data.z) + Math.abs(player.c - data.x);
 
-            // Prevent phasing into solid physical objects during AR
             const targetType = currentLevelData.map[data.z][data.x];
             if (targetType === 2) {
-                document.getElementById('log').innerText = "PATH BLOCKED. SOLID OBSTACLE.";
+                pushToLog("PATH BLOCKED. SOLID OBSTACLE.", true);
                 return;
             }
             const targetDoor = currentLevelData.doors.find(d => d.r === data.z && d.c === data.x);
             if (targetType === 3 && targetDoor && !targetDoor.unlocked) {
-                document.getElementById('log').innerText = "PATH BLOCKED. DOOR LOCKED.";
+                pushToLog("PATH BLOCKED. DOOR LOCKED.", true);
                 return;
             }
 
             if (dist === 1) {
-                // Scorpion blocks grid movement
                 if (player.statuses.scorpionActive) {
-                    document.getElementById('log').innerText = "SCORPION ICE: MOVEMENT ROOTED!";
+                    pushToLog("SCORPION ICE: MOVEMENT ROOTED!", true);
                     return;
                 }
                 player.c = data.x;
@@ -1439,21 +1364,17 @@ window.addEventListener('mousedown', (e) => {
                 selectedTarget = null;
                 consumeNetAction(1);
             } else if (dist > 1) {
-                document.getElementById('log').innerText = "INVALID MOVE. SELECT ADJACENT TILE.";
+                pushToLog("INVALID MOVE. SELECT ADJACENT TILE.", true);
             }
         }
     }
 });
 
 window.addEventListener('keydown', (e) => {
-    // Only allow spacebar if we are actively playing the level
     if (appState !== 'GAME') return;
 
-    // Check if the Spacebar was pressed
     if (e.code === 'Space') {
-        e.preventDefault(); // Prevents the browser from scrolling down the page!
-
-        // Simulate a click on the End Turn button
+        e.preventDefault(); 
         document.getElementById('btn-end-turn').click();
     }
 });
@@ -1465,7 +1386,6 @@ function consumeNetAction(cost = 1) {
     if (player.netAp <= 0) {
         triggerNetAction();
 
-        // Apply penalty, but guarantee at least 1 Net Action
         player.netAp = Math.max(1, player.maxNetAp - player.statuses.netApPenalty);
         player.statuses.netApPenalty = 0;
 
@@ -1474,20 +1394,19 @@ function consumeNetAction(cost = 1) {
 }
 
 function triggerNetAction() {
-    if (player.statuses.burning > 0) {
-        takeDamage(1);
-        document.getElementById('log').innerText = `HELLHOUND FIRE: TOOK 1 DMG! (${player.statuses.burning} TURNS LEFT)`;
-        player.statuses.burning--;
-    }
-
-    // Tick down disabled program timers
     for (let prog in player.statuses.disabledPrograms) {
         if (player.statuses.disabledPrograms[prog] > 0) {
             player.statuses.disabledPrograms[prog]--;
             if (player.statuses.disabledPrograms[prog] === 0) {
-                document.getElementById('log').innerText = `SYSTEM RECOVERED: ${prog.toUpperCase()}.EXE ONLINE.`;
+                pushToLog(`SYSTEM RECOVERED: ${prog.toUpperCase()}.EXE ONLINE.`, true);
             }
         }
+    }
+
+    if (player.statuses.burning > 0) {
+        takeDamage(1);
+        pushToLog(`(HELLHOUND FIRE: ${player.statuses.burning} TURNS LEFT)`, true);
+        player.statuses.burning--;
     }
 
     processNetrunTurn();
@@ -1508,28 +1427,20 @@ function processNetrunTurn() {
 
         if (en.data.isAlerted && en.data.floor === player.floor) {
 
-            // Constant Area-of-Effect Abilities
             if (en.data.type === 'Kraken') player.statuses.krakenActive = true;
             if (en.data.type === 'Scorpion') player.statuses.scorpionActive = true;
 
             const isValidIceTile = (x, z) => {
-                // Stay within map bounds
                 if (z < 0 || z >= currentLevelData.map.length || x < 0 || x >= currentLevelData.map[0].length) return false;
-
-                // MUST stay within the 3x3 AR grid around the terminal
                 if (activeTerminal && (Math.abs(x - activeTerminal.c) > 1 || Math.abs(z - activeTerminal.r) > 1)) return false;
-
-                // Treat the terminal itself as a solid wall
                 if (activeTerminal && x === activeTerminal.c && z === activeTerminal.r) return false;
 
-                // Treat physical walls and pits as solid
                 const type = currentLevelData.map[z][x];
                 if (type === 1 || type === 4) return false;
 
                 return true;
             };
 
-            // 2. Execute BFS Pathfinding (Just like the Player's getPath!)
             let queue = [{ x: en.data.x, z: en.data.z, path: [] }];
             let visited = new Set([`${en.data.x},${en.data.z}`]);
             let targetPath = null;
@@ -1537,7 +1448,6 @@ function processNetrunTurn() {
             while (queue.length > 0) {
                 let curr = queue.shift();
 
-                // If we found the player, save the path and stop searching
                 if (curr.x === player.c && curr.z === player.r) {
                     targetPath = curr.path;
                     break;
@@ -1555,11 +1465,9 @@ function processNetrunTurn() {
                 }
             }
 
-            // 3. Take the first step on the calculated path
             if (targetPath && targetPath.length > 0) {
                 const nextStep = targetPath[0];
 
-                // Don't physically step onto the player (just get adjacent to attack)
                 if (!(nextStep.x === player.c && nextStep.z === player.r)) {
                     en.data.x = nextStep.x;
                     en.data.z = nextStep.z;
@@ -1572,22 +1480,21 @@ function processNetrunTurn() {
             if (newDistX <= 1 && newDistZ <= 1) {
                 takeDamage(1);
 
-                // Specific ICE Attack Effects
                 if (en.data.type === 'Asp') {
                     const targetable = ['swordfish', 'harpoon', 'scales', 'swim'];
                     const hitProg = targetable[Math.floor(Math.random() * targetable.length)];
 
                     player.statuses.disabledPrograms[hitProg] = 3;
-                    document.getElementById('log').innerText += ` | ASP VIRUS: ${hitProg.toUpperCase()}.EXE CORRUPTED!`;
+                    pushToLog(`ASP VIRUS: ${hitProg.toUpperCase()}.EXE CORRUPTED!`, true);
 
                 } else if (en.data.type === 'Wisp') {
                     if (player.statuses.netApPenalty < 1) {
                         player.statuses.netApPenalty = 1;
-                        document.getElementById('log').innerText += " | WISP HIT: NET ACTION DRAINED!";
+                        pushToLog("WISP HIT: NET ACTION DRAINED!", true);
                     }
                 } else if (en.data.type === 'Hellhound') {
                     player.statuses.burning = 4;
-                    document.getElementById('log').innerText += " | HELLHOUND: NEURAL FIRE DETECTED!";
+                    pushToLog("HELLHOUND: NEURAL FIRE DETECTED!", true);
                 }
 
                 if (en.body.isGroup) {
@@ -1639,23 +1546,21 @@ function canChangeFloor(targetFloor) {
 }
 
 document.getElementById('btn-up').onclick = () => {
-    if (player.statuses.krakenActive) { document.getElementById('log').innerText = "KRAKEN ICE: ELEVATION BLOCKED!"; return; }
+    if (player.statuses.krakenActive) { pushToLog("KRAKEN ICE: ELEVATION BLOCKED!", true); return; }
     if (player.floor > 0 && canChangeFloor(player.floor - 1)) {
         player.floor--;
 
-        // Alerted enemies follow you up
         enemies.forEach(en => { if (en.data.active && en.data.isAlerted) en.data.floor = player.floor; });
 
         updateNetUI(); consumeNetAction(1);
-    } else if (player.floor > 0) document.getElementById('log').innerText = "ERROR: ELEVATION BLOCKED BY ICE.";
+    } else if (player.floor > 0) pushToLog("ERROR: ELEVATION BLOCKED BY ICE.", true);
 };
 
 document.getElementById('btn-down').onclick = () => {
-    if (player.statuses.krakenActive) { document.getElementById('log').innerText = "KRAKEN ICE: DIVE BLOCKED!"; return; }
+    if (player.statuses.krakenActive) { pushToLog("KRAKEN ICE: DIVE BLOCKED!", true); return; }
 
-    // Prevent Diving into locked floors
     if (player.floor + 1 === currentTotalFloors - 1 && activeTerminal.lockedWith && !player.inventory.includes(activeTerminal.lockedWith)) {
-        document.getElementById('log').innerText = "ERROR: DECRYPTION KEY REQUIRED TO ACCESS CORE.";
+        pushToLog("ERROR: DECRYPTION KEY REQUIRED TO ACCESS CORE.", true);
         return;
     }
 
@@ -1665,22 +1570,20 @@ document.getElementById('btn-down').onclick = () => {
         enemies.forEach(en => { if (en.data.active && en.data.isAlerted) en.data.floor = player.floor; });
 
         updateNetUI(); consumeNetAction(1);
-    } else if (player.floor < currentTotalFloors - 1) document.getElementById('log').innerText = "ERROR: DIVE BLOCKED BY OBSTACLE.";
+    } else if (player.floor < currentTotalFloors - 1) pushToLog("ERROR: DIVE BLOCKED BY OBSTACLE.", true);
 };
 
 document.getElementById('btn-sonar').onclick = () => {
     if (currentMode !== 'NETRUN' || isScanning) return;
 
     isScanning = true;
-    document.getElementById('log').innerText = "SONAR.EXE: SCANNING ARCHITECTURE...";
-    document.getElementById('log').className = 'log log-netrun';
-
+    pushToLog("SONAR.EXE: SCANNING ARCHITECTURE...", true);
+    
     enemies.forEach(en => {
         if (en.data.active) {
             const layer = document.getElementById(`layer-${en.data.floor}`);
             if (layer) {
                 layer.classList.add('scanning-active');
-                // Highlight layer during scan pulse
                 layer.classList.add('detected');
             }
         }
@@ -1692,7 +1595,6 @@ document.getElementById('btn-sonar').onclick = () => {
             const layer = document.getElementById(`layer-${en.data.floor}`);
             if (layer) {
                 layer.classList.remove('scanning-active');
-                // Remove the scan alert, unless the enemy is naturally alerted
                 const naturallyAlerted = enemies.some(nEn => nEn.data.active && nEn.data.floor === en.data.floor && nEn.data.isAlerted);
                 if (!naturallyAlerted) {
                     layer.classList.remove('detected');
@@ -1707,41 +1609,38 @@ document.getElementById('btn-sonar').onclick = () => {
 document.getElementById('btn-scales').onclick = () => {
     if (currentMode !== 'NETRUN') return;
 
-    // Check for disabled programs (Asp virus)
     if (player.statuses.disabledPrograms.scales > 0) {
-        document.getElementById('log').innerText = `ERROR: SCALES.EXE REBOOTING (${player.statuses.disabledPrograms.scales} TURNS)`;
+        pushToLog(`ERROR: SCALES.EXE REBOOTING (${player.statuses.disabledPrograms.scales} TURNS)`, true);
         return;
     }
 
     player.statuses.scalesBarrier = 2;
-    document.getElementById('log').innerText = "SCALES.EXE: ABSORB NEXT 2 SPIKES.";
-    document.getElementById('log').className = 'log log-netrun';
+    pushToLog("SCALES.EXE: ABSORB NEXT 2 SPIKES.", true);
 
     consumeNetAction(1);
 };
 
 document.getElementById('btn-swim').onclick = () => {
     if (currentMode !== 'NETRUN') return;
-    if (player.statuses.krakenActive) { document.getElementById('log').innerText = "SWIM.EXE FAILED: KRAKEN ROOTED YOU."; return; }
+    if (player.statuses.krakenActive) { pushToLog("SWIM.EXE FAILED: KRAKEN ROOTED YOU.", true); return; }
 
     if (player.statuses.disabledPrograms.swim > 0) {
-        document.getElementById('log').innerText = `ERROR: SWIM.EXE REBOOTING (${player.statuses.disabledPrograms.swim} TURNS)`;
+        pushToLog(`ERROR: SWIM.EXE REBOOTING (${player.statuses.disabledPrograms.swim} TURNS)`, true);
         return;
     }
 
     if (player.floor + 1 === currentTotalFloors - 1 && activeTerminal.lockedWith && !player.inventory.includes(activeTerminal.lockedWith)) {
-        document.getElementById('log').innerText = "SWIM.EXE FAILED: DECRYPTION KEY REQUIRED.";
+        pushToLog("SWIM.EXE FAILED: DECRYPTION KEY REQUIRED.", true);
         return;
     }
 
     if (player.floor < currentTotalFloors - 1) {
         if (!canChangeFloor(player.floor + 1)) {
-            document.getElementById('log').innerText = "SWIM.EXE FAILED: CELL OCCUPIED."; return;
+            pushToLog("SWIM.EXE FAILED: CELL OCCUPIED.", true); return;
         }
 
         player.floor++;
 
-        // Drop aggro of the enemies left behind on the old floor
         enemies.forEach(en => {
             if (en.data.active && en.data.floor !== player.floor) {
                 en.data.isAlerted = false;
@@ -1749,12 +1648,11 @@ document.getElementById('btn-swim').onclick = () => {
         });
 
         updateNetUI();
-        document.getElementById('log').innerText = "SWIM.EXE: EMERGENCY DIVE EXECUTED. ICE EVADED.";
-        document.getElementById('log').className = 'log log-netrun';
+        pushToLog("SWIM.EXE: EMERGENCY DIVE EXECUTED. ICE EVADED.", true);
 
         consumeNetAction(1);
     } else {
-        document.getElementById('log').innerText = "SWIM.EXE FAILED: MAXIMUM DEPTH REACHED.";
+        pushToLog("SWIM.EXE FAILED: MAXIMUM DEPTH REACHED.", true);
     }
 };
 
@@ -1762,12 +1660,9 @@ document.getElementById('btn-harpoon').onclick = () => {
     if (currentMode !== 'NETRUN' || !selectedTarget || !selectedTarget.data.active) return;
 
     if (player.statuses.disabledPrograms.harpoon > 0) {
-        document.getElementById('log').innerText = `ERROR: HARPOON.EXE REBOOTING (${player.statuses.disabledPrograms.harpoon} TURNS)`;
+        pushToLog(`ERROR: HARPOON.EXE REBOOTING (${player.statuses.disabledPrograms.harpoon} TURNS)`, true);
         return;
     }
-
-    const dx = Math.abs(player.c - selectedTarget.data.x);
-    const dz = Math.abs(player.r - selectedTarget.data.z);
 
     if (selectedTarget.data.floor === player.floor) {
         selectedTarget.data.hp -= 3;
@@ -1779,9 +1674,9 @@ document.getElementById('btn-harpoon').onclick = () => {
             selectedTarget.data.active = false;
             selectedTarget.group.visible = false;
             selectedTarget = null;
-            document.getElementById('log').innerText = "TARGET TERMINATED";
+            pushToLog("TARGET TERMINATED", true);
         } else {
-            document.getElementById('log').innerText = `ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`;
+            pushToLog(`ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`, true);
         }
 
         consumeNetAction(1);
@@ -1792,7 +1687,7 @@ document.getElementById('btn-swordfish').onclick = () => {
     if (currentMode !== 'NETRUN' || !selectedTarget || !selectedTarget.data.active) return;
 
     if (player.statuses.disabledPrograms.swordfish > 0) {
-        document.getElementById('log').innerText = `ERROR: SWORDFISH.EXE REBOOTING (${player.statuses.disabledPrograms.swordfish} TURNS)`;
+        pushToLog(`ERROR: SWORDFISH.EXE REBOOTING (${player.statuses.disabledPrograms.swordfish} TURNS)`, true);
         return;
     }
 
@@ -1809,11 +1704,11 @@ document.getElementById('btn-swordfish').onclick = () => {
             selectedTarget.data.active = false;
             selectedTarget.group.visible = false;
             selectedTarget = null;
-            document.getElementById('log').innerText = "TARGET TERMINATED";
-        } else document.getElementById('log').innerText = `ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`;
+            pushToLog("TARGET TERMINATED", true);
+        } else pushToLog(`ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`, true);
 
         consumeNetAction(1);
-    } else document.getElementById('log').innerText = "ERROR: TARGET OUT OF RANGE";
+    } else pushToLog("ERROR: TARGET OUT OF RANGE", true);
 };
 
 document.getElementById('btn-end-turn').onclick = () => {
@@ -1823,7 +1718,6 @@ document.getElementById('btn-end-turn').onclick = () => {
         player.ap = player.maxAp;
         document.getElementById('ap-display').innerText = player.ap;
 
-        // Move Patrollers and spin Stationary guards
         if (currentLevelData.guards) {
             currentLevelData.guards.forEach(guard => {
                 if (guard.path) {
@@ -1852,7 +1746,7 @@ document.getElementById('btn-end-turn').onclick = () => {
         checkPhysicalDetection();
 
     } else if (currentMode === 'NETRUN') {
-        document.getElementById('log').innerText = "NET TURN ENDED";
+        pushToLog("NET TURN ENDED", true);
         player.netAp = 0;
         consumeNetAction(0);
     }
@@ -1883,7 +1777,6 @@ function animate() {
 
                     let finalTargetOp = targetOp;
 
-                    // Apply the glow to the active physical terminal
                     if (isActiveTerminal) {
                         finalTargetOp = 1.0;
                     }
@@ -1904,7 +1797,6 @@ function animate() {
                             finalTargetOp = 0.0;
                         } else {
                             const isExit = currentLevelData.exit && currentLevelData.exit.r === child.userData.r && currentLevelData.exit.c === child.userData.c;
-                            // Set target opacity for inactive tactical grid
                             finalTargetOp = isExit ? 1.0 : 0.25;
                         }
                     }
@@ -1973,12 +1865,10 @@ function animate() {
     camera.position.z += ((player.r + 10) - camera.position.z) * 0.1;
     camera.position.y += (10 - camera.position.y) * 0.1;
 
-    // Smoothly rotate the environmental arm
     if (currentLevelData && currentLevelData.robotArm) {
         currentLevelData.robotArm.rotation.y += (currentLevelData.robotArmTargetRot - currentLevelData.robotArm.rotation.y) * 0.1;
     }
 
-    // Smoothly rotate all guards
     if (currentLevelData.guards) {
         currentLevelData.guards.forEach(guard => {
             if (guard.mesh) {
@@ -2024,7 +1914,6 @@ function animate() {
                 en.group.position.x += (en.data.x - en.group.position.x) * 0.2;
                 en.group.position.z += (en.data.z - en.group.position.z) * 0.2;
 
-                // Spawn enemies at the dynamic Netrun height
                 const targetEnemyY = netrunBaseY + (-en.data.floor * FLOOR_SPACING) + 0.4 + (player.floor * FLOOR_SPACING);
                 en.group.position.y += (targetEnemyY - en.group.position.y) * 0.2;
 
@@ -2062,7 +1951,6 @@ function animate() {
         });
 
         netFloorGroups.forEach((g, i) => {
-            // Apply visibility multiplier based on active floor
             const floorMultiplier = (i === player.floor || isScanning) ? 1.0 : 0.05;
 
             const targetFloorY = netrunBaseY + (-i * FLOOR_SPACING) + (player.floor * FLOOR_SPACING);

@@ -50,13 +50,12 @@ export const LEVEL_DATA = {
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], //9
         ],
 
-        // Primary Guard (Middle-Left)
         guards: [
             { r: 6, c: 1, dirs: ['up', 'right', 'down', 'left'], dirIdx: 0 },
             { r: 1, c: 10, dirs: ['down', 'right'], dirIdx: 0 }, // New Guard 1
             { r: 5, c: 12, dirs: ['left', 'up', 'right', 'down'], dirIdx: 0 }  // New Guard 2
         ],
-        // Assuming the Blue Circle is the Spawn, and Exit is at the end of the right corridor
+
         exit: { r: 8, c: 16 },
 
         terminals: [
@@ -75,8 +74,17 @@ export const LEVEL_DATA = {
         drones: []
     },
     2: {
-        // Paste the Corporate Office map array here when you are ready to implement it!
         spawn: { r: 5, c: 0 },
+
+        tutorial: [
+            {
+                title: "LOCKED LEVELS",
+                text: "Levels inside an architecture might be locked, you must look for a decryption key to proceed",
+                mediaType: "image", 
+                mediaSrc: "media/placeholder.png" 
+            },
+        ],
+
         map: [
             //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
             [0, 0, 0, 0, 1, 0, 0, 2, 1, 0, 6, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1], //0
@@ -92,7 +100,7 @@ export const LEVEL_DATA = {
         ],
 
         guards: [
-            // Guard 1: Patrols the top-left hallway vertically
+
             {
                 r: 0, c: 0,
                 path: [
@@ -105,7 +113,7 @@ export const LEVEL_DATA = {
                 ],
                 pathIdx: 0, targetRot: 0
             },
-            // Guard 2: Paces horizontally in the large bottom-middle area
+
             {
                 r: 8, c: 6,
                 path: [
@@ -121,7 +129,7 @@ export const LEVEL_DATA = {
                 ],
                 pathIdx: 0, targetRot: Math.PI / 2
             },
-            // Guard 3: Guards the hallway leading to the Exit
+
             {
                 r: 1, c: 15,
                 path: [

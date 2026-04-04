@@ -315,7 +315,6 @@ body {
     transform: rotateZ(45deg);
     opacity: 0.5;
 }
-
 .log-wrapper {
     position: absolute;
     bottom: 20px;
@@ -357,6 +356,7 @@ body {
     font-size: 0.9rem;
     padding: 4px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: inherit; /* This ensures it keeps your cyber font! */
 }
 
 .log-item.netrun {
@@ -377,6 +377,7 @@ body {
     border: none;
 }
 
+/* Your brilliant CSS that naturally fades and hides old items! */
 .log-wrapper:not(.expanded) .log-item:nth-last-child(2) {
     display: block;
     opacity: 0.3;
