@@ -224,7 +224,8 @@ diálogos entre personagens
     filter: grayscale(80%);
 }
 
-.portrait {
+/* Necessário ajustar mais tarde de modo a suportar o artwork dos portraits*/
+.portrait { 
     width: 150px;
     height: 150px;
     background: #111;
