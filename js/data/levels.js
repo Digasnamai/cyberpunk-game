@@ -41,7 +41,7 @@ export const LEVEL_DATA = {
         ],
 
         // Layout
-        
+
         // 0 = célula livre
         // 1 = parede/obstáculo
         // 2 = terminal
@@ -194,5 +194,79 @@ export const LEVEL_DATA = {
         ],
 
         platforms: [], drones: []
+    },
+
+    6: {
+        
+        spawn: { r: 1, c: 0 },
+
+        tutorial: [
+            {
+                title: "INTEGRATED SYSTEMS",
+                text: "This area combines all security measures for testing purposes",
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
+            },
+        ],
+
+        // Legenda: 0:Chão, 1:Parede, 2:Terminal, 3:Porta, 4:Vazio, 5:Câmara, 6:Datapad
+        
+        map: [
+            //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+            [1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1], //0
+            [0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0, 1, 0, 0, 0, 1], //1
+            [0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0], //2
+            [5, 1, 0, 3, 0, 4, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0], //3
+            [0, 0, 0, 1, 1, 4, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1], //4
+            [0, 2, 0, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //5 (Saída na col 15)
+            [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //6
+        ],
+
+        //Um guarda estático e um drone em patrulha
+        guards: [
+            { r: 0, c: 4, dirs: ['down', 'right'], dirIdx: 0 }
+        ],
+        
+        drones: [
+            {
+                r: 5, c: 8,
+                path: [[5, 8], [5, 9], [5, 10], [5, 11], [5, 10], [5, 9]],
+                pathIdx: 0, forward: true, mesh: null
+            }
+        ],
+
+        //1 camara de Vigilância
+        cameras: [
+            { id: "C_TEST", r: 3, c: 0, dirs: ['right'], dirIdx: 0, active: true, mesh: null }
+        ],
+
+        //portas
+        doors: [
+            { id: "D_HACK", r: 3, c: 3, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null },
+            { id: "D_FINAL", r: 4, c: 10, dir: 'horizontal', unlocked: false, leftMesh: null, rightMesh: null }
+        ],
+
+        //plataforma
+        platforms: [
+            {
+                r: 3, c: 5,
+                path: [[3, 5],[4, 5], [5, 5]], // Move-se verticalmente para criar uma ponte
+                pathIdx: 0, forward: true, mesh: null
+            }
+        ],
+
+        //1 Datapad
+        passwords: [
+            { r: 1, c: 8, id: "KEY_OMEGA", mesh: null }
+        ],
+
+        terminals: [
+            // T1 abre a primeira porta
+            { id: "T_START", r: 5, c: 1, action: "unlock_door", targetId: "D_HACK", floors: 2 },
+            // T_CORE exige o Datapad "KEY_OMEGA" para progredir
+            { id: "T_CORE", r: 3, c: 14, action: "unlock_door", targetId: "D_FINAL", floors: 3, lockedWith: "KEY_OMEGA" }
+        ],
+
+        exit: { r: 5, c: 15 }
     }
 };

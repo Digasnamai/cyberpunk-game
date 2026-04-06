@@ -264,6 +264,9 @@ document.querySelectorAll('.map-node').forEach(node => {
         if (level === 2) {
             showCharacterDialogue(mission2Dialogue, () => { startLevel(level); });
         }
+        if (level === 6) {
+            showCharacterDialogue(mission2Dialogue, () => { startLevel(level); });
+        }
     };
 });
 
