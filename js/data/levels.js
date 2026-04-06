@@ -1,40 +1,55 @@
+// Blueprints e data para cada nível
+
 export const LEVEL_DATA = {
     1: {
 
+        //posição inicial do jogador 
         spawn: { r: 0, c: 0 },
 
+        //informação de tutorial ligada a este nível
         tutorial: [
             {
                 title: "MOVEMENT [1/5]",
                 text: "Click on tiles to move arround. Action points limit your movement per turn.",
-                mediaType: "image", 
-                mediaSrc: "media/placeholder.png" 
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
             },
             {
                 title: "NETRUNNING [2/5]",
                 text: "Your path might be blocked by several obstacles, in order to deactivate them you must access a terminal, move to the bottom of it's 'NET Architecture' using 'ASCEND' and 'DIVE' and interact with it again",
-                mediaType: "image", 
-                mediaSrc: "media/placeholder.png" 
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
             },
             {
                 title: "NET PROGRAMS [3/5]",
                 text: "In order to combat ICE you are equiped with different programs, 'SONAR' scans the architecture allowing you to see different floors, 'SWIM' let's you escape an enemy into the floor below",
-                mediaType: "image", 
-                mediaSrc: "media/placeholder.png" 
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
             },
             {
                 title: "NET COMBAT [4/5]",
                 text: "There are different types of ICE and each has it's own effects, in order to combat them you can use 'SWORDFISH' to damage them at close range or 'HARPOON' for longer ranges, you can also use 'SCALES' to defend yourself",
-                mediaType: "image", 
-                mediaSrc: "media/placeholder.png" 
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
             },
             {
                 title: "STEALTH [5/5]",
                 text: "In the physical space avoid the red visual cones of security guards and cameras. Detection resets you to the start of the level.",
-                mediaType: "image", 
-                mediaSrc: "media/placeholder.png" 
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
             }
         ],
+
+        // Layout
+        
+        // 0 = célula livre
+        // 1 = parede/obstáculo
+        // 2 = terminal
+        // 3 = Porta
+        // 4 = espaço vazio (pode ser atravessado ao usar uma plataforma movível)
+        // 5 = camara
+        // 6 = Datapad 
+        // 8 = Braço de robo
 
         map: [
             //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
@@ -50,25 +65,32 @@ export const LEVEL_DATA = {
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], //9
         ],
 
+        //Define a posição dos guardas e as direções para onde sse vira
         guards: [
             { r: 6, c: 1, dirs: ['up', 'right', 'down', 'left'], dirIdx: 0 },
             { r: 1, c: 10, dirs: ['down', 'right'], dirIdx: 0 }, // New Guard 1
             { r: 5, c: 12, dirs: ['left', 'up', 'right', 'down'], dirIdx: 0 }  // New Guard 2
         ],
 
+        //posição da saida
         exit: { r: 8, c: 16 },
 
+        //"action" determina que tipo de ação deve acontecer após o jogador chegar ao fim do terminal
+        //"targetId" é a referência para a porta, camara ou objeto onde atuar
+        //"floors" determina quantos n´íveis tem a architecture
         terminals: [
             { id: "T1", r: 2, c: 2, action: "unlock_door", targetId: "D1", floors: 2 },
             { id: "T2", r: 1, c: 14, action: "unlock_door", targetId: "D2", floors: 3 },
             { id: "T3", r: 8, c: 5, action: "rotate_arm", targetId: "RoboticArm", floors: 3 }
         ],
 
+        //bloqueiam movimento até serem desbloquadas por um terminal
         doors: [
             { id: "D1", r: 3, c: 1, dir: 'horizontal', unlocked: false, leftMesh: null, rightMesh: null },
             { id: "D2", r: 5, c: 14, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null }
         ],
 
+        //mecãnicas não utilizadas neste nível 
         cameras: [],
         platforms: [],
         drones: []
@@ -80,8 +102,8 @@ export const LEVEL_DATA = {
             {
                 title: "LOCKED LEVELS",
                 text: "Levels inside an architecture might be locked, you must look for a decryption key to proceed",
-                mediaType: "image", 
-                mediaSrc: "media/placeholder.png" 
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
             },
         ],
 
@@ -99,6 +121,8 @@ export const LEVEL_DATA = {
 
         ],
 
+        //comportamento mais avançado para os guardas
+        //em vez de apenas terem direções onde olhar agora têm um caminho que seguem em loop
         guards: [
 
             {
@@ -133,14 +157,19 @@ export const LEVEL_DATA = {
             {
                 r: 1, c: 15,
                 path: [
-                    { r: 1, c: 15, dir: 'down' }, { r: 2, c: 15, dir: 'down' }, 
+                    { r: 1, c: 15, dir: 'down' }, { r: 2, c: 15, dir: 'down' },
                     { r: 3, c: 15, dir: 'down' }, { r: 4, c: 15, dir: 'down' },
-                    { r: 5, c: 15, dir: 'up' }, { r: 4, c: 15, dir: 'up' }, 
+                    { r: 5, c: 15, dir: 'up' }, { r: 4, c: 15, dir: 'up' },
                     { r: 3, c: 15, dir: 'up' }, { r: 2, c: 15, dir: 'up' }
                 ],
                 pathIdx: 0, targetRot: 0
             }
         ],
+
+        exit: { r: 1, c: 20 },
+
+
+        //camaras emitem uma linha de visão numa direção podendo ser desativadas por um terminal
         cameras: [
             { id: "C1", r: 2, c: 13, dirs: ['right'], dirIdx: 0, active: true, mesh: null },
             { id: "C2", r: 3, c: 11, dirs: ['left'], dirIdx: 0, active: true, mesh: null },
@@ -149,11 +178,13 @@ export const LEVEL_DATA = {
 
         terminals: [
             { id: "T1", r: 4, c: 5, action: "unlock_door", targetId: "D1", floors: 2 },
+            //este terminal tem um layer bloqueado requerindo ao utilizador encontrar o Datapad para progredir
             { id: "T2", r: 4, c: 19, action: "unlock_door", targetId: "D2", floors: 4, lockedWith: "PASS_T2" },
             { id: "T3", r: 0, c: 7, action: "disable_camera", targetId: "C3", floors: 2 },
             { id: "T4", r: 8, c: 13, action: "disable_camera", targetId: "C2", floors: 3 },
 
         ],
+        //Datapad necessário para desbloquear um layer num terminal
         passwords: [
             { r: 0, c: 10, id: "PASS_T2", mesh: null }
         ],
@@ -161,7 +192,7 @@ export const LEVEL_DATA = {
             { id: "D1", r: 2, c: 4, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null },
             { id: "D2", r: 3, c: 18, dir: 'horizontal', unlocked: false, leftMesh: null, rightMesh: null },
         ],
-        exit: { r: 1, c: 20 },
+
         platforms: [], drones: []
     }
 };
