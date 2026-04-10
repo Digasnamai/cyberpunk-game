@@ -54,6 +54,7 @@ let appState = 'MENU';
 let currentLevelIndex = 1;
 let currentTutorialPages = [];
 let currentTutorialIndex = 0;
+let onTutorialComplete = null;
 
 // Função para navegar entre ecrãs dos diferentes estados do jogo
 function switchScreen(screenId) {
@@ -242,7 +243,7 @@ function showCharacterDialogue(dialogueArray, onCompleteCallback) {
 document.getElementById('btn-new-game').onclick = () => {
     showIntro(introSequence, () => {
         showCharacterDialogue(mission1Dialogue, () => {
-            startLevel(1);
+            startLevel(0);
         });
     });
 };
@@ -258,6 +259,9 @@ document.querySelectorAll('.map-node').forEach(node => {
     node.onclick = (e) => {
         const level = parseInt(e.target.getAttribute('data-level'));
 
+        if (level === 0) {
+            startLevel(level);
+        }
         if (level === 1) {
             showCharacterDialogue(mission1Dialogue, () => { startLevel(level); });
         }
@@ -330,8 +334,8 @@ function renderTutorialPage() {
     document.getElementById('btn-prev-tutorial').style.display = currentTutorialIndex > 0 ? 'block' : 'none';
 
     if (currentTutorialIndex === currentTutorialPages.length - 1) {
-        //se na úçtima página apresenta o botão como "BEGIN"
-        document.getElementById('btn-next-tutorial').innerText = 'BEGIN >>';
+        //se na úçtima página apresenta o botão como "UNDERSTOOD"
+        document.getElementById('btn-next-tutorial').innerText = 'UNDERSTOOD >>';
     } else {
         document.getElementById('btn-next-tutorial').innerText = 'NEXT >>';
     }
@@ -349,9 +353,13 @@ document.getElementById('btn-next-tutorial').onclick = () => {
         currentTutorialIndex++;
         renderTutorialPage();
     } else {
-        // Encerra o tutorial e começa a gameplay
         document.getElementById('tutorial-overlay').style.display = 'none';
-        appState = 'GAME'; //volta a meter o state para game
+        appState = 'GAME';
+
+        if (typeof onTutorialComplete === 'function') {
+            onTutorialComplete();
+            onTutorialComplete = null;
+        }
     }
 };
 
@@ -551,6 +559,27 @@ function executePathMovement(path) {
             checkPhysicalDetection();
             isPlayerMoving = false;
             return;
+        }
+
+        if (currentLevelData.triggers) {
+            const activeTrigger = currentLevelData.triggers.find(t => t.r === player.r && t.c === player.c && !t.fired);
+
+            if (activeTrigger) {
+                activeTrigger.fired = true;
+
+                appState = 'TUTORIAL';
+                currentTutorialPages = activeTrigger.pages || [activeTrigger];
+                currentTutorialIndex = 0;
+
+                document.getElementById('tutorial-overlay').style.display = 'flex';
+                renderTutorialPage();
+
+                onTutorialComplete = () => {
+                    setTimeout(nextStep, 150);
+                };
+
+                return;
+            }
         }
 
         setTimeout(nextStep, 150);
@@ -1156,8 +1185,18 @@ function generateMirroredNetrun(terminalData) {
     //limpa os dados da última vez que se entrou num terminal
     netFloorGroups.forEach(g => scene.remove(g));
     netFloorGroups = [];
-    enemies.forEach(e => scene.remove(e.group));
-    enemies = [];
+
+    if (enemies && enemies.length > 0) {
+        enemies.forEach(en => {
+            // Remove o modelo 3D antigo da cena, se ainda existir
+            if (en.group && en.group.parent) {
+                en.group.parent.remove(en.group);
+            }
+        });
+        enemies = []; // Esvazia o array de inimigos!
+    }
+
+    selectedTarget = null;
 
     //guarda quadrados seguros para poder adicionar ICE neles
     let validNetCoords = [];
@@ -1220,16 +1259,28 @@ function generateMirroredNetrun(terminalData) {
 
     //pega nos quadrados seguros e adiciona ICE 
     if (validNetCoords.length > 0) {
-        const outerTiles = validNetCoords.filter(t => t.x !== terminalData.c || t.z !== terminalData.r);
+        // Filtra os quadrados para garantir que o inimigo não nasce em cima do próprio terminal
+        let outerTiles = validNetCoords.filter(t => t.x !== terminalData.c || t.z !== terminalData.r);
 
-        //atribui o primeiro quadrado vazio possível
-        const spawn1 = outerTiles.length > 0 ? outerTiles[0] : validNetCoords[0];
-        const spawn2 = outerTiles.length > 1 ? outerTiles[1] : validNetCoords[0];
+        // Proteção: Se o terminal estiver num beco sem saída e não houver "outerTiles", usa o que houver
+        if (outerTiles.length === 0) outerTiles = [...validNetCoords];
 
-        // adiciona um ICE no andar abaico do inicial
-        spawnICE(1, spawn1.x, spawn1.z);
-        // se tiver mais de dois andares, põe mais um no andar 3
-        if (currentTotalFloors > 2) spawnICE(2, spawn2.x, spawn2.z);
+        // Função que tira um quadrado aleatório do "saco" e o remove da lista
+        const pullRandomSpawn = () => {
+            if (outerTiles.length === 0) return null; // Previne erros se faltarem quadrados
+            const randomIndex = Math.floor(Math.random() * outerTiles.length);
+            return outerTiles.splice(randomIndex, 1)[0]; // splice remove e devolve o item
+        };
+
+        // Sorteia a posição do 1º monstro (Andar 1)
+        const spawn1 = pullRandomSpawn();
+        if (spawn1) spawnICE(1, spawn1.x, spawn1.z);
+
+        // Se a arquitetura for profunda (mais de 2 andares), sorteia o 2º monstro (Andar 2)
+        if (currentTotalFloors > 2) {
+            const spawn2 = pullRandomSpawn();
+            if (spawn2) spawnICE(2, spawn2.x, spawn2.z);
+        }
     }
 
     //repõe os AP do jogador quando entra
@@ -1239,6 +1290,8 @@ function generateMirroredNetrun(terminalData) {
     //O jogador começa sempre no andar principal 0
     player.floor = 0;
     updateNetUI();
+
+    checkNetrunTriggers();
 }
 
 //gerador aleatório de ICE 
@@ -1359,6 +1412,36 @@ function takeDamage(amt) {
     }
 }
 
+// ==========================================
+// SISTEMA DE TRIGGERS (TUTORIAIS NETRUN)
+// ==========================================
+function checkNetrunTriggers() {
+    // Só funciona se estivermos ativamente num terminal que tenha triggers configurados
+    if (activeTerminal && activeTerminal.triggers) {
+
+        // Procura um trigger válido para o andar atual.
+        // Se o trigger não especificar 'r' ou 'c', ele dispara em QUALQUER quadrado desse andar!
+        const activeTrigger = activeTerminal.triggers.find(t =>
+            t.floor === player.floor &&
+            (t.r === undefined || t.r === player.r) &&
+            (t.c === undefined || t.c === player.c) &&
+            !t.fired
+        );
+
+        if (activeTrigger) {
+            activeTrigger.fired = true;
+
+            // Pausa o jogo e abre o ecrã
+            appState = 'TUTORIAL';
+            currentTutorialPages = activeTrigger.pages || [activeTrigger];
+            currentTutorialIndex = 0;
+
+            document.getElementById('tutorial-overlay').style.display = 'flex';
+            renderTutorialPage();
+        }
+    }
+}
+
 //highlight do caminho usando o rato
 window.addEventListener('mousemove', (e) => {
     //ignora se estivermos Netrunning, nos menus ou se já estiver a andar
@@ -1385,15 +1468,20 @@ window.addEventListener('mousemove', (e) => {
             const type = currentLevelData.map[data.r][data.c];
             //ignora paredes e terminais
             if (type !== 1 && type !== 2) {
-                //usa o algoritmo de pathfinding
-                currentPath = getPath(player.r, player.c, data.r, data.c, player.ap);
 
-                //se houver uma rota segura, ilumina os tiles correspondentes 
+                // NOVO: Se o jogador não tiver AP, projeta o caminho simulando que já tem o AP do próximo turno
+                const projectedAp = player.ap > 0 ? player.ap : player.maxAp;
+                currentPath = getPath(player.r, player.c, data.r, data.c, projectedAp);
+
+                // Se houver uma rota segura, ilumina os quadrados
                 if (currentPath && currentPath.length > 0) {
                     physGridGroup.children.forEach(child => {
                         if (child.userData.type === 'floor' || child.userData.type === 'platform') {
                             const inPath = currentPath.some(p => p.r === child.userData.r && p.c === child.userData.c);
-                            if (inPath) child.material.emissive.setHex(0x00ffcc);
+                            if (inPath) {
+                                // NOVO: Fica Laranja se for um movimento do próximo turno, Ciano se for do atual
+                                child.material.emissive.setHex(player.ap > 0 ? 0x00ffcc : 0xff8800);
+                            }
                         }
                     });
                 }
@@ -1469,7 +1557,36 @@ window.addEventListener('mousedown', (e) => {
             if (currentPath && currentPath.length > 0) {
                 const lastStep = currentPath[currentPath.length - 1];
 
+                // Verifica se clicámos exatamente no fim dessa rota planeada
                 if (lastStep.r === data.r && lastStep.c === data.c) {
+
+                    // Se o jogador tiver 0 AP, passa o turno automaticamente antes de se mexer
+                    if (player.ap <= 0) {
+                        pushToLog("OUT OF AP. AUTO-ENDING TURN...", false);
+
+                        const startR = player.r;
+                        const startC = player.c;
+
+                        // 1. Termina o turno (isto vai espoletar a pausa cinemática de 400ms)
+                        document.getElementById('btn-end-turn').click();
+
+                        const savedPath = currentPath;
+                        currentPath = null;
+                        clearHighlights();
+
+                        setTimeout(() => {
+                            // Verifica se o jogador sobreviveu ao turno sem ser apanhado
+                            const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
+                            if (player.r === startR && player.c === startC && !inVision) {
+                                // Se sobreviveu e ainda está no mesmo sítio, pode correr em segurança!
+                                executePathMovement(savedPath);
+                            }
+                        }, 400);
+
+                        return;
+                    }
+
+                    // Se tinha AP normal, o movimento é imediato
                     executePathMovement(currentPath);
                     return;
                 }
@@ -1477,7 +1594,7 @@ window.addEventListener('mousedown', (e) => {
 
             if (data.r === player.r && data.c === player.c) return;
 
-            pushToLog("INVALID MOVE. PATH BLOCKED OR NO AP.", false);
+            pushToLog("INVALID MOVE. PATH BLOCKED OR NOT ENOUGH AP.", false);
         }
     }
 
@@ -1803,6 +1920,8 @@ document.getElementById('btn-up').onclick = () => {
         // atualiza o UI e consome NA
         updateNetUI();
         consumeNetAction(1);
+
+        checkNetrunTriggers();
     }
 
     //bloqueado por ICE
@@ -1828,10 +1947,12 @@ document.getElementById('btn-down').onclick = () => {
 
         //ICE que já esteja alerta, perseguem o jogador para o novo andar
         enemies.forEach(en => { if (en.data.active && en.data.isAlerted) en.data.floor = player.floor; });
-       
+
         // atualiza o UI e consome NA
-        updateNetUI(); consumeNetAction(1);
-    } 
+        updateNetUI();
+        consumeNetAction(1);
+        checkNetrunTriggers();
+    }
 
     //bloqueado por ICE
     else if (player.floor < currentTotalFloors - 1) {
@@ -1940,64 +2061,108 @@ document.getElementById('btn-swim').onclick = () => {
 
 //HARPOON.EXE: Ataque de longo alcance 
 document.getElementById('btn-harpoon').onclick = () => {
-    if (currentMode !== 'NETRUN' || !selectedTarget || !selectedTarget.data.active) return;
+    if (currentMode !== 'NETRUN') return;
 
-    // Verifica se o programa foi corrompido por um Asp
     if (player.statuses.disabledPrograms.harpoon > 0) {
         pushToLog(`ERROR: HARPOON.EXE REBOOTING (${player.statuses.disabledPrograms.harpoon} TURNS)`, true);
         return;
     }
 
-    // Pode atingir qualquer inimigo no mesmo andar, independentemente da distância
-    if (selectedTarget.data.floor === player.floor) {
-        selectedTarget.data.hp -= 3;
-
-        // Ativa o efeito visual de impacto no local do inimigo
-        netSlashEffect.position.set(selectedTarget.group.position.x, 0.6, selectedTarget.group.position.z);
-        netSlashMat.opacity = 1;
-
-        if (selectedTarget.data.hp <= 0) {
-            selectedTarget.data.active = false;
-            selectedTarget.group.visible = false;
-            selectedTarget = null;
-            pushToLog("TARGET TERMINATED", true);
-        } else {
-            pushToLog(`ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`, true);
-        }
-
-        consumeNetAction(1);
+    let target = selectedTarget;
+    
+    // SMART TARGETING: If the locked target is on another floor, drop the lock-on
+    if (target && target.data.active && target.data.floor !== player.floor) {
+        target = null;
     }
+
+    // AUTO-TARGET: Find the closest enemy on the same floor
+    if (!target || !target.data.active) {
+        let minDist = Infinity;
+        enemies.forEach(en => {
+            if (en.data.active && en.data.floor === player.floor) {
+                const dist = Math.max(Math.abs(player.c - en.data.x), Math.abs(player.r - en.data.z));
+                if (dist < minDist) {
+                    minDist = dist;
+                    target = en; 
+                }
+            }
+        });
+    }
+
+    if (!target || target.data.floor !== player.floor) {
+         pushToLog("HARPOON.EXE FAILED: NO VALID TARGETS.", true);
+         return;
+    }
+
+    // Apply Damage
+    target.data.hp -= 3;
+    netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
+    netSlashMat.opacity = 1;
+
+    if (target.data.hp <= 0) {
+        target.data.active = false;
+        target.group.visible = false;
+        if (selectedTarget === target) selectedTarget = null; 
+        pushToLog("TARGET TERMINATED", true);
+    } else {
+        pushToLog(`ICE INTEGRITY: ${target.data.hp * 10}%`, true);
+    }
+
+    consumeNetAction(1);
 };
 
 //SWORDFISH.EXE: Ataque de curto alcance mas de dano elevado
 document.getElementById('btn-swordfish').onclick = () => {
-    if (currentMode !== 'NETRUN' || !selectedTarget || !selectedTarget.data.active) return;
+    if (currentMode !== 'NETRUN') return;
 
-    // Verifica se o programa foi corrompido por um Asp
     if (player.statuses.disabledPrograms.swordfish > 0) {
         pushToLog(`ERROR: SWORDFISH.EXE REBOOTING (${player.statuses.disabledPrograms.swordfish} TURNS)`, true);
         return;
     }
 
-    const dx = Math.abs(player.c - selectedTarget.data.x);
-    const dz = Math.abs(player.r - selectedTarget.data.z);
+    let target = selectedTarget;
 
-    // Só atinge inimigos em quadrados adjacentes (distância <= 1)
-    if (selectedTarget.data.floor === player.floor && dx <= 1 && dz <= 1) {
-        selectedTarget.data.hp -= 5;
-        netSlashEffect.position.set(selectedTarget.group.position.x, 0.6, selectedTarget.group.position.z);
-        netSlashEffect.scale.set(0.1, 0.1, 0.1);
-        netSlashMat.opacity = 1;
+    // SMART TARGETING: If locked target is on another floor or NOT adjacent, 
+    // drop the lock-on so we can auto-target the immediate threat!
+    if (target && target.data.active) {
+        const dx = Math.abs(player.c - target.data.x);
+        const dz = Math.abs(player.r - target.data.z);
+        if (target.data.floor !== player.floor || dx > 1 || dz > 1) {
+            target = null; 
+        }
+    }
 
-        if (selectedTarget.data.hp <= 0) {
-            selectedTarget.data.active = false;
-            selectedTarget.group.visible = false;
-            selectedTarget = null;
-            pushToLog("TARGET TERMINATED", true);
-        } else pushToLog(`ICE INTEGRITY: ${selectedTarget.data.hp * 10}%`, true);
+    // AUTO-TARGET: Find the first adjacent enemy
+    if (!target || !target.data.active) {
+        target = enemies.find(en => 
+            en.data.active && 
+            en.data.floor === player.floor && 
+            Math.max(Math.abs(player.c - en.data.x), Math.abs(player.r - en.data.z)) <= 1
+        );
+    }
 
-        consumeNetAction(1);
-    } else pushToLog("ERROR: TARGET OUT OF RANGE", true);
+    if (!target || !target.data.active) {
+         pushToLog("SWORDFISH.EXE FAILED: NO TARGETS IN RANGE.", true);
+         return;
+    }
+
+    // We don't need a final distance check here because our filter already guarantees they are adjacent!
+    target.data.hp -= 5;
+    
+    netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
+    netSlashEffect.scale.set(0.1, 0.1, 0.1);
+    netSlashMat.opacity = 1;
+
+    if (target.data.hp <= 0) {
+        target.data.active = false;
+        target.group.visible = false;
+        if (selectedTarget === target) selectedTarget = null;
+        pushToLog("TARGET TERMINATED", true);
+    } else {
+        pushToLog(`ICE INTEGRITY: ${target.data.hp * 10}%`, true);
+    }
+
+    consumeNetAction(1);
 };
 
 ////////////////////////
@@ -2043,7 +2208,10 @@ document.getElementById('btn-end-turn').onclick = () => {
         processMovingPlatforms();
         processDrones();
         updateVision();
-        checkPhysicalDetection(); //verifica se o jogador terminou o turno numa zona de perigo após os guardas darem update
+
+        setTimeout(() => {
+            checkPhysicalDetection();
+        }, 300); //verifica se o jogador terminou o turno numa zona de perigo após os guardas darem update
 
     } else if (currentMode === 'NETRUN') {
         pushToLog("NET TURN ENDED", true);
@@ -2109,7 +2277,7 @@ function animate() {
                             finalTargetOp = isExit ? 1.0 : 0.25;
                         }
                     }
-                    
+
                     //aproxima a opacidade atual da opacidade desejada em 10% por frame
                     if (mat.opacity !== undefined) {
                         mat.opacity += (finalTargetOp - mat.opacity) * 0.1;

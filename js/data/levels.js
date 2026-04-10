@@ -1,13 +1,128 @@
 // Blueprints e data para cada nível
 
 export const LEVEL_DATA = {
+    0: {
+        // O jogador nasce num ambiente seguro
+        spawn: { r: 1, c: 1 },
+
+        // Mensagem de Boas-Vindas (Aparece logo que o nível carrega)
+        tutorial: [
+            {
+                title: "TRAINING LEVEL",
+                text: "Welcome to the VR Training Simulator. Your objective is to reach the extraction point.<br><br>Move by clicking on the cyan tiles. Every step uses <b>Action Points (AP)</b>. If you run out, <b>end your turn using spacebar</b>.",
+                mediaType: "image",
+                mediaSrc: "media/placeholder.png"
+            }
+        ],
+
+        // O Mapa (Formato de corredor para forçar a aprendizagem)
+        // 0: Chão, 1: Parede, 2: Terminal, 3: Porta, 5: Câmara, 6: Datapad
+        map: [
+            //0  1  2  3  4  5  6  7  8  9 10 11 12
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //0
+            [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1], //1 (Spawn a 1,1. Datapad a 1,5)
+            [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0], //2 (Guarda a 2,5. Impede o acesso ao Datapad)
+            [1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0], //3 (Terminal a 3,8. Porta a 3,10. Saída a 3,11)
+            [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0], //4
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //5
+        ],
+
+        // === AS ZONAS DE GATILHO (Mid-level pop-ups) ===
+        triggers: [
+            {
+                // Dispara mesmo antes de o jogador chegar à zona de perigo do guarda
+                r: 3, c: 3, fired: false,
+                title: "THREAT AVOIDANCE",
+                text: "Red cells indicate enemy Line of Sight. If a guard sees you, you will be reset to the start of the level.<br><br><b>End your turn (spacebar)</b>  to let the security guard look the other way, then sneak past it",
+                mediaType: "image", mediaSrc: "media/placeholder.png"
+            },
+            {
+                // Dispara quando o jogador chega perto do terminal
+                r: 3, c: 7, fired: false,
+                title: "NETRUNNING & COMBAT",
+                text: "Physical doors can be locked and opening them requires you to hack the nearby terminal.<br><br>Click the <b>Terminal</b> to enter it's Net Architecture, reach the bottom floor and click on the Core to open the door.",
+                mediaType: "image", mediaSrc: "media/placeholder.png"
+            }
+        ],
+
+        // Guarda estático que roda 90 graus por turno. 
+        // O jogador tem de "passar o turno" até ele olhar para a parede para poder roubar o Datapad.
+        guards: [
+            { r: 2, c: 5, dirs: ['down', 'left', 'up', 'right'], dirIdx: 0 }
+        ],
+
+        // O Terminal ensina a descer 1 andar e a lutar contra 1 monstro antes de abrir a porta
+        terminals: [
+            {
+                id: "T_TUTORIAL", r: 3, c: 8, action: "unlock_door", targetId: "DOOR_TUTORIAL", floors: 2,
+                // GATILHOS EXCLUSIVOS DESTE NETRUN
+                triggers: [
+                    {
+                        // isto dispara imediatamente quando ele entra no Netrun.
+                        floor: 0, fired: false,
+                        pages: [
+                            {
+                                title: "THE NET ARCHITECTURE",
+                                text: "Welcome to the Net Architecture.<br><br>You are currently on the top floor of this architecture. Your physical body is safe but Internal Countermeasure Electronics or <b>ICE</b> programs will hunt you here.",
+                                mediaType: "image", mediaSrc: "media/placeholder.png"
+                            },
+                            {
+                                title: "MOVEMENT",
+                                text: "You can think of a net architecture like an elevator that moves between floors, your goal is to reach the bottom floor to hack it.<br><br>You can move arround by <b>pressing adjacent tiles</b>. To move between floors you can use <b>'ASCEND'</b> to go up and <b>'DIVE'</b> to go down.",
+                                mediaType: "image",
+                                mediaSrc: "media/placeholder.png"
+                            },
+                            {
+                                title: "NET UI",
+                                text: "On the <b>left side</b> of the screen you'll find the <b>list of programs</b> you can use and on the <b>right side</b> the <b>layout of the Architecture</b>, each layer is a floor and the one that's moved to the side is the one you're currently on.",
+                                mediaType: "image",     
+                                mediaSrc: "media/placeholder.png"
+                            },
+                            {
+                                title: "NET COMBAT [1/2]",
+                                text: "In order to combat ICE you are equiped with different types of programs. <b>SONAR</b> scans the architecture allowing you to see different floors and where ICE are. <b>SWIM</b> let's you escape an enemy into the floor below.",
+                                mediaType: "image",
+                                mediaSrc: "media/placeholder.png"
+                            },
+                            {
+                                title: "NET COMBAT [2/2]",
+                                text: "You can use <b>SWORDFISH</b> to fight ICE at close range or <b>HARPOON</b> for longer distances, you can also use <b>SCALES</b> to defend yourself. <br><br> Each ICE has a different effect so pay attention to the log at the bottom of the screen to get info on what's happening.",
+                                mediaType: "image",
+                                mediaSrc: "media/placeholder.png"
+                            },
+                        ]
+                    },
+                    {
+                        // Como omitimos o 'r' e o 'c', isto dispara mal o jogador 
+                        // use o botão DIVE para chegar ao Piso 1 (L_02), independentemente de onde esteja a pisar.
+                        floor: 1, fired: false,
+                        title: "ICE ENCOUNTER",
+                        text: "You dived to the Core floor but it is protected by an ICE!<br><br> Move close to it and click the <b>SWORDFISH</b> program on the left to attack it and defeat it. <br><br>Next, click on the glowing Core to hack the door and Jack Out.",
+                        mediaType: "image", mediaSrc: "media/placeholder.png"
+                    }
+                ]
+            }
+        ],
+
+        // A porta bloqueada que protege a saída
+        doors: [
+            { id: "DOOR_TUTORIAL", r: 3, c: 10, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null }
+        ],
+
+        // O ponto de vitória
+        exit: { r: 3, c: 12 },
+
+        cameras: [], platforms: [], drones: []
+    },
+
     1: {
 
         //posição inicial do jogador 
         spawn: { r: 0, c: 0 },
 
         //informação de tutorial ligada a este nível
-        tutorial: [
+        tutorial: [],
+        /*
             {
                 title: "MOVEMENT [1/5]",
                 text: "Click on tiles to move arround. Action points limit your movement per turn.",
@@ -39,6 +154,7 @@ export const LEVEL_DATA = {
                 mediaSrc: "media/placeholder.png"
             }
         ],
+        */
 
         // Layout
 
@@ -197,7 +313,7 @@ export const LEVEL_DATA = {
     },
 
     6: {
-        
+
         spawn: { r: 1, c: 0 },
 
         tutorial: [
@@ -210,7 +326,7 @@ export const LEVEL_DATA = {
         ],
 
         // Legenda: 0:Chão, 1:Parede, 2:Terminal, 3:Porta, 4:Vazio, 5:Câmara, 6:Datapad
-        
+
         map: [
             //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
             [1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1], //0
@@ -226,7 +342,7 @@ export const LEVEL_DATA = {
         guards: [
             { r: 0, c: 4, dirs: ['down', 'right'], dirIdx: 0 }
         ],
-        
+
         drones: [
             {
                 r: 5, c: 8,
@@ -250,7 +366,7 @@ export const LEVEL_DATA = {
         platforms: [
             {
                 r: 3, c: 5,
-                path: [[3, 5],[4, 5], [5, 5]], // Move-se verticalmente para criar uma ponte
+                path: [[3, 5], [4, 5], [5, 5]], // Move-se verticalmente para criar uma ponte
                 pathIdx: 0, forward: true, mesh: null
             }
         ],
