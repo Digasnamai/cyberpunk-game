@@ -4,7 +4,7 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 // Importação dos dados e arquitetura dos níveis
 import { LEVEL_DATA } from './data/levels.js';
-import { introSequence, mission1Dialogue, mission2Dialogue } from './data/dialogues.js';
+import { introSequence, mission1Dialogue, mission2Dialogue,mission3Dialogue,mission4Dialogue } from './data/dialogues.js';
 
 ////////////////////////////////////////////////////
 // Inicialização do Three.js, load dos modelos (.glb) 
@@ -267,6 +267,12 @@ document.querySelectorAll('.map-node').forEach(node => {
         }
         if (level === 2) {
             showCharacterDialogue(mission2Dialogue, () => { startLevel(level); });
+        }
+        if (level === 3) {
+            showCharacterDialogue(mission3Dialogue, () => { startLevel(level); });
+        }
+        if (level === 4) {
+            showCharacterDialogue(mission4Dialogue, () => { startLevel(level); });
         }
         if (level === 6) {
             showCharacterDialogue(mission2Dialogue, () => { startLevel(level); });
@@ -1567,7 +1573,7 @@ window.addEventListener('mousedown', (e) => {
                         const startR = player.r;
                         const startC = player.c;
 
-                        // 1. Termina o turno (isto vai espoletar a pausa cinemática de 400ms)
+                        // Termina o turno 
                         document.getElementById('btn-end-turn').click();
 
                         const savedPath = currentPath;
@@ -1578,7 +1584,6 @@ window.addEventListener('mousedown', (e) => {
                             // Verifica se o jogador sobreviveu ao turno sem ser apanhado
                             const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
                             if (player.r === startR && player.c === startC && !inVision) {
-                                // Se sobreviveu e ainda está no mesmo sítio, pode correr em segurança!
                                 executePathMovement(savedPath);
                             }
                         }, 400);
@@ -2070,12 +2075,10 @@ document.getElementById('btn-harpoon').onclick = () => {
 
     let target = selectedTarget;
     
-    // SMART TARGETING: If the locked target is on another floor, drop the lock-on
     if (target && target.data.active && target.data.floor !== player.floor) {
         target = null;
     }
 
-    // AUTO-TARGET: Find the closest enemy on the same floor
     if (!target || !target.data.active) {
         let minDist = Infinity;
         enemies.forEach(en => {
@@ -2122,8 +2125,6 @@ document.getElementById('btn-swordfish').onclick = () => {
 
     let target = selectedTarget;
 
-    // SMART TARGETING: If locked target is on another floor or NOT adjacent, 
-    // drop the lock-on so we can auto-target the immediate threat!
     if (target && target.data.active) {
         const dx = Math.abs(player.c - target.data.x);
         const dz = Math.abs(player.r - target.data.z);
@@ -2132,7 +2133,6 @@ document.getElementById('btn-swordfish').onclick = () => {
         }
     }
 
-    // AUTO-TARGET: Find the first adjacent enemy
     if (!target || !target.data.active) {
         target = enemies.find(en => 
             en.data.active && 
@@ -2146,7 +2146,6 @@ document.getElementById('btn-swordfish').onclick = () => {
          return;
     }
 
-    // We don't need a final distance check here because our filter already guarantees they are adjacent!
     target.data.hp -= 5;
     
     netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
