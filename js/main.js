@@ -4,7 +4,7 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 // Importação dos dados e arquitetura dos níveis
 import { LEVEL_DATA } from './data/levels.js';
-import { introSequence, mission1Dialogue, mission2Dialogue,mission3Dialogue,mission4Dialogue } from './data/dialogues.js';
+import { introSequence, mission1Dialogue, mission2Dialogue, mission3Dialogue, mission4Dialogue, mission5Dialogue } from './data/dialogues.js';
 
 ////////////////////////////////////////////////////
 // Inicialização do Three.js, load dos modelos (.glb) 
@@ -274,6 +274,9 @@ document.querySelectorAll('.map-node').forEach(node => {
         if (level === 4) {
             showCharacterDialogue(mission4Dialogue, () => { startLevel(level); });
         }
+        if (level === 5) {
+            showCharacterDialogue(mission5Dialogue, () => { startLevel(level); });
+        }
         if (level === 6) {
             showCharacterDialogue(mission2Dialogue, () => { startLevel(level); });
         }
@@ -431,7 +434,7 @@ function isWalkable(r, c) {
 
     //se o espaço estiver ocupado por drones ou guardas bloqueiam movimento
     if (currentLevelData.guards && currentLevelData.guards.some(g => g.r === r && g.c === c)) return false;
-    if (currentLevelData.drones.some(d => d.r === r && d.c === c)) return false;
+    if (currentLevelData.drones && currentLevelData.drones.some(d => d.active !== false && d.r === r && d.c === c)) return false;
 
     // Cones de visão bloqueiam movimento 
     const inVision = visionGroup.children.some(v => v.userData.isCone && v.userData.r === r && v.userData.c === c);
@@ -552,6 +555,27 @@ function executePathMovement(path) {
 
                     guard.dirs = [step.dir];
                     guard.dirIdx = 0;
+                }
+            });
+        }
+
+        if (currentLevelData.drones) {
+            currentLevelData.drones.forEach(drone => {
+                if (drone.active !== false) {
+                    if (drone.forward) {
+                        drone.pathIdx++;
+                        if (drone.pathIdx >= drone.path.length - 1) drone.forward = false;
+                    } else {
+                        drone.pathIdx--;
+                        if (drone.pathIdx <= 0) drone.forward = true;
+                    }
+                    drone.r = drone.path[drone.pathIdx][0];
+                    drone.c = drone.path[drone.pathIdx][1];
+
+                    if (drone.mesh) {
+                        drone.mesh.userData.r = drone.r;
+                        drone.mesh.userData.c = drone.c;
+                    }
                 }
             });
         }
@@ -952,37 +976,39 @@ function updateVision() {
     //area dos drones 
     if (currentLevelData.drones) {
         currentLevelData.drones.forEach(drone => {
-            for (let dr = -1; dr <= 1; dr++) {
-                for (let dc = -1; dc <= 1; dc++) {
-                    const vR = drone.r + dr;
-                    const vC = drone.c + dc;
+            if (drone.active !== false) {
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        const vR = drone.r + dr;
+                        const vC = drone.c + dc;
 
-                    if (vR < 0 || vR >= currentLevelData.map.length || vC < 0 || vC >= currentLevelData.map[0].length) continue;
-                    if (currentLevelData.map[vR][vC] === 1) continue;
+                        if (vR < 0 || vR >= currentLevelData.map.length || vC < 0 || vC >= currentLevelData.map[0].length) continue;
+                        if (currentLevelData.map[vR][vC] === 1) continue;
 
-                    const tileKey = `${vR},${vC}`;
-                    if (!window.drawnVisionTiles.has(tileKey)) {
-                        window.drawnVisionTiles.add(tileKey);
+                        const tileKey = `${vR},${vC}`;
+                        if (!window.drawnVisionTiles.has(tileKey)) {
+                            window.drawnVisionTiles.add(tileKey);
 
-                        const droneGeo = new THREE.PlaneGeometry(0.9, 0.9);
-                        droneGeo.rotateX(-Math.PI / 2);
+                            const droneGeo = new THREE.PlaneGeometry(0.9, 0.9);
+                            droneGeo.rotateX(-Math.PI / 2);
 
-                        const vision = new THREE.Mesh(
-                            droneGeo,
-                            new THREE.MeshBasicMaterial({ color: 0xaa00ff, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })
-                        );
+                            const vision = new THREE.Mesh(
+                                droneGeo,
+                                new THREE.MeshBasicMaterial({ color: 0xaa00ff, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })
+                            );
 
-                        const vY = currentLevelData.heightMap[vR][vC];
-                        const vNormal = currentLevelData.normalMap[vR][vC];
+                            const vY = currentLevelData.heightMap[vR][vC];
+                            const vNormal = currentLevelData.normalMap[vR][vC];
 
-                        vision.position.set(vC, vY + 0.08, vR);
+                            vision.position.set(vC, vY + 0.08, vR);
 
-                        const up = new THREE.Vector3(0, 1, 0);
-                        vision.quaternion.setFromUnitVectors(up, vNormal);
+                            const up = new THREE.Vector3(0, 1, 0);
+                            vision.quaternion.setFromUnitVectors(up, vNormal);
 
-                        vision.renderOrder = 2;
-                        vision.userData = { r: vR, c: vC, isCone: true };
-                        visionGroup.add(vision);
+                            vision.renderOrder = 2;
+                            vision.userData = { r: vR, c: vC, isCone: true };
+                            visionGroup.add(vision);
+                        }
                     }
                 }
             }
@@ -1114,6 +1140,8 @@ function processMovingPlatforms() {
 //comportamento de drones
 function processDrones() {
     currentLevelData.drones.forEach(drone => {
+        if (drone.active === false) return;
+
         if (drone.forward) {
             drone.pathIdx++;
             if (drone.pathIdx >= drone.path.length - 1) drone.forward = false;
@@ -1278,14 +1306,15 @@ function generateMirroredNetrun(terminalData) {
             return outerTiles.splice(randomIndex, 1)[0]; // splice remove e devolve o item
         };
 
-        // Sorteia a posição do 1º monstro (Andar 1)
-        const spawn1 = pullRandomSpawn();
-        if (spawn1) spawnICE(1, spawn1.x, spawn1.z);
-
-        // Se a arquitetura for profunda (mais de 2 andares), sorteia o 2º monstro (Andar 2)
-        if (currentTotalFloors > 2) {
-            const spawn2 = pullRandomSpawn();
-            if (spawn2) spawnICE(2, spawn2.x, spawn2.z);
+        for (let f = 1; f < currentTotalFloors; f++) {
+            const spawnPoint = pullRandomSpawn();
+            
+            // Se encontrou um quadrado válido, faz spawn do ICE nesse andar
+            if (spawnPoint) {
+                spawnICE(f, spawnPoint.x, spawnPoint.z);
+            } else {
+                break; 
+            }
         }
     }
 
@@ -1648,6 +1677,32 @@ window.addEventListener('mousedown', (e) => {
                             currentLevelData.map[7][7] = 0;
                         }
                         successMessage = "CORE COMPROMISED. MACHINERY OVERRIDE ENGAGED.";
+
+                    } else if (activeTerminal.action === 'disable_drone') {
+                        // Transforma o targetId numa lista (mesmo que seja só um drone, vira uma lista de 1 elemento)
+                        const targets = Array.isArray(activeTerminal.targetId) ? activeTerminal.targetId : [activeTerminal.targetId];
+
+                        let disabledCount = 0;
+
+                        // Percorre todos os IDs de drones fornecidos pelo terminal
+                        targets.forEach(id => {
+                            const targetDrone = currentLevelData.drones.find(d => d.id === id);
+                            if (targetDrone) {
+                                targetDrone.active = false;
+
+                                // Efeito visual de desligar
+                                if (targetDrone.mesh) {
+                                    targetDrone.mesh.material.emissive.setHex(0x111111);
+                                    targetDrone.mesh.material.opacity = 0.3;
+                                    targetDrone.mesh.position.y = 0.1; // Drone cai no chão
+                                }
+                                disabledCount++;
+                            }
+                        });
+
+                        if (disabledCount > 0) {
+                            pushToLog(`CORE COMPROMISED. ${disabledCount} AUTOMATED DRONE(S) OFFLINE.`, true);
+                        }
                     }
 
                     //volta ao mundo real
@@ -2074,7 +2129,7 @@ document.getElementById('btn-harpoon').onclick = () => {
     }
 
     let target = selectedTarget;
-    
+
     if (target && target.data.active && target.data.floor !== player.floor) {
         target = null;
     }
@@ -2086,26 +2141,27 @@ document.getElementById('btn-harpoon').onclick = () => {
                 const dist = Math.max(Math.abs(player.c - en.data.x), Math.abs(player.r - en.data.z));
                 if (dist < minDist) {
                     minDist = dist;
-                    target = en; 
+                    target = en;
                 }
             }
         });
     }
 
     if (!target || target.data.floor !== player.floor) {
-         pushToLog("HARPOON.EXE FAILED: NO VALID TARGETS.", true);
-         return;
+        pushToLog("HARPOON.EXE FAILED: NO VALID TARGETS.", true);
+        return;
     }
 
     // Apply Damage
     target.data.hp -= 3;
     netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
+    netSlashEffect.scale.set(0.1, 0.1, 0.1);
     netSlashMat.opacity = 1;
 
     if (target.data.hp <= 0) {
         target.data.active = false;
         target.group.visible = false;
-        if (selectedTarget === target) selectedTarget = null; 
+        if (selectedTarget === target) selectedTarget = null;
         pushToLog("TARGET TERMINATED", true);
     } else {
         pushToLog(`ICE INTEGRITY: ${target.data.hp * 10}%`, true);
@@ -2129,25 +2185,25 @@ document.getElementById('btn-swordfish').onclick = () => {
         const dx = Math.abs(player.c - target.data.x);
         const dz = Math.abs(player.r - target.data.z);
         if (target.data.floor !== player.floor || dx > 1 || dz > 1) {
-            target = null; 
+            target = null;
         }
     }
 
     if (!target || !target.data.active) {
-        target = enemies.find(en => 
-            en.data.active && 
-            en.data.floor === player.floor && 
+        target = enemies.find(en =>
+            en.data.active &&
+            en.data.floor === player.floor &&
             Math.max(Math.abs(player.c - en.data.x), Math.abs(player.r - en.data.z)) <= 1
         );
     }
 
     if (!target || !target.data.active) {
-         pushToLog("SWORDFISH.EXE FAILED: NO TARGETS IN RANGE.", true);
-         return;
+        pushToLog("SWORDFISH.EXE FAILED: NO TARGETS IN RANGE.", true);
+        return;
     }
 
     target.data.hp -= 5;
-    
+
     netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
     netSlashEffect.scale.set(0.1, 0.1, 0.1);
     netSlashMat.opacity = 1;
@@ -2393,9 +2449,15 @@ function animate() {
     //movimento e bobbing dos drones
     currentLevelData.drones.forEach(drone => {
         if (drone.mesh) {
-            drone.mesh.position.x += (drone.c - drone.mesh.position.x) * 0.2;
-            drone.mesh.position.z += (drone.r - drone.mesh.position.z) * 0.2;
-            drone.mesh.position.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.1;
+            if (drone.active !== false) {
+                // Drone VIVO: flutua suavemente e desloca-se para a sua coordenada
+                drone.mesh.position.x += (drone.c - drone.mesh.position.x) * 0.2;
+                drone.mesh.position.z += (drone.r - drone.mesh.position.z) * 0.2;
+                drone.mesh.position.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.1;
+            } else {
+                // Drone MORTO: desliza fisicamente para o chão
+                drone.mesh.position.y += (0.1 - drone.mesh.position.y) * 0.2;
+            }
         }
     });
 

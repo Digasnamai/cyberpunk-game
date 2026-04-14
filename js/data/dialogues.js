@@ -37,3 +37,9 @@ export const mission4Dialogue = [
     { side: "left", name: "NYX", text: "Dialogue 2" },
     { side: "right", name: "Character", text: "Dialogue 1" }
 ];
+
+export const mission5Dialogue = [
+    { side: "right", name: "Character", text: "Dialogue 1" },
+    { side: "left", name: "NYX", text: "Dialogue 2" },
+    { side: "right", name: "Character", text: "Dialogue 1" }
+];
