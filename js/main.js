@@ -33,7 +33,7 @@ loader.load('models/Swordfish.glb', function (gltf) {
     console.log("Swordfish model loaded!");
 });
 
-loader.load('models/low poly woman.glb', function (gltf) {
+loader.load('models/Low poly woman.glb', function (gltf) {
     models.netrunnerGltf = gltf;
     console.log("Netrunner model loaded!");
 });
