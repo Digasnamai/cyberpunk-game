@@ -6,7 +6,7 @@ export const introSequence = [
     { speaker: "", text: "...Matosinhos is a small community created by old fishermen turned to contraband.", showMap: true, activeLayers: ['map-matosinhos'] },
     { speaker: "", text: "Although not controlled, it depends financially on the corporations. It's divided into two groups: DeadFish, who witnessed the 4th corporate war, and NetFish, the ones born after.", showMap: true, activeLayers: [] },
     { speaker: "", text: "You are Nyx, a Netrunner from NetFish tired of depending on corporations for survival", showMap: false, activeLayers: [] },
-    { speaker: "", text: "Your group plans a heist on Militech's side of the port of Leças to steal valuable information and get rich selling it to the highest bidder freeing yourself from the corporations", showMap: false, activeLayers: [] }
+    { speaker: "", text: "Your group plans a heist on Militech's side of the port of Leças to steal valuable information and get rich selling it to the highest bidder, freeing yourself from the corporations", showMap: false, activeLayers: [] }
 ];
 
 //diálogo antes da 1ª missao

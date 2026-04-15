@@ -16,7 +16,7 @@ let currentMode = 'PHYSICAL'; // Define se estamos no modo 'PHYSICAL' (meatspace
 const scene = new THREE.Scene();
 
 // Pré-carregamento dos modelos 3D 
-let models = { hellhound: null, asp: null, guard: null, level1: null, netrunnerGltf: null, swordfishGltf: null };
+let models = { hellhound: null, asp: null, guard: null, level1: null, netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null };
 
 const clock = new THREE.Clock(); // Cronómetro para as animações
 let netPlayerMixer = null;       // Controlador da animação do jogador
@@ -26,7 +26,15 @@ let swordfishMixer = null;
 let activeSwordfish = null;
 let swordfishTimeout = null;
 
+let activeHarpoon = null;
+let harpoonTimeout = null;
+
 const loader = new GLTFLoader();
+
+loader.load('models/Harpoon.glb', function (gltf) {
+    models.harpoonGltf = gltf;
+    console.log("Harpoon model loaded!");
+});
 
 loader.load('models/Swordfish.glb', function (gltf) {
     models.swordfishGltf = gltf;
@@ -540,14 +548,35 @@ function executePathMovement(path) {
             if (currentLevelData.exit && player.r === currentLevelData.exit.r && player.c === currentLevelData.exit.c) {
                 pushToLog("EXTRACTION POINT REACHED", false);
                 setTimeout(() => {
-                    appState = 'MAP';
+                    const nextLevel = currentLevelIndex + 1;
+
+                    // Se não houver mais níveis (Fim do jogo), volta ao mapa
+                    if (!LEVEL_DATA[nextLevel]) {
+                        appState = 'MAP';
+                        renderer.domElement.style.display = 'none';
+                        switchScreen('world-map');
+                        return;
+                    }
+
                     renderer.domElement.style.display = 'none';
 
-                    //retorna o jogador à seleção de niveis
-                    const nextLevel = currentLevelIndex + 1;
-                    const nextMapBtn = document.querySelector(`.map-node[data-level="${nextLevel}"]`);
-                    if (nextMapBtn) nextMapBtn.disabled = false;
-                    switchScreen('world-map');
+                    if (nextLevel === 1) {
+                        showCharacterDialogue(mission1Dialogue, () => { startLevel(nextLevel); });
+                    } else if (nextLevel === 2) {
+                        showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); });
+                    } else if (nextLevel === 3) {
+                        showCharacterDialogue(mission3Dialogue, () => { startLevel(nextLevel); });
+                    } else if (nextLevel === 4) {
+                        showCharacterDialogue(mission4Dialogue, () => { startLevel(nextLevel); });
+                    } else if (nextLevel === 5) {
+                        showCharacterDialogue(mission5Dialogue, () => { startLevel(nextLevel); });
+                    } else if (nextLevel === 6) {
+                        showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); }); 
+                    } else {
+                        //se for um nível sem diálogo
+                        startLevel(nextLevel);
+                    }
+
                 }, 1500);
             }
             return;
@@ -2212,9 +2241,74 @@ document.getElementById('btn-harpoon').onclick = () => {
 
     // Apply Damage
     target.data.hp -= 3;
-    netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
-    netSlashEffect.scale.set(0.1, 0.1, 0.1);
-    netSlashMat.opacity = 1;
+    
+    ///////////////////
+    if (models.harpoonGltf) {
+        if (harpoonTimeout) {
+            clearTimeout(harpoonTimeout);
+            harpoonTimeout = null;
+        }
+        if (activeHarpoon) {
+            scene.remove(activeHarpoon);
+        }
+
+        activeHarpoon = models.harpoonGltf.scene.clone();
+        activeHarpoon.scale.set(2.5, 2.5, 2.5); 
+        
+        const startY = playerGroup.position.y + 1.5;
+        const targetY = target.group.position.y + 0.25;
+        
+        // Calcula a distância horizontal entre o jogador e o alvo
+        const dx = target.group.position.x - playerGroup.position.x;
+        const dz = target.group.position.z - playerGroup.position.z;
+        const distXZ = Math.sqrt(dx * dx + dz * dz);
+        
+        // Calcula o ângulo vertical
+        const pitchAngle = Math.atan2(targetY - startY, distXZ);
+
+        activeHarpoon.rotation.y = player.targetRot + Math.PI;
+        
+        activeHarpoon.rotation.x = -pitchAngle; 
+        
+        activeHarpoon.position.set(playerGroup.position.x, startY, playerGroup.position.z);
+
+        activeHarpoon.traverse((child) => {
+            if (child.isMesh) {
+                child.renderOrder = 1001;
+                if (child.material) {
+                    child.material.depthTest = false;
+                    child.material.transparent = true;
+                    child.material.opacity = 0;
+                }
+            }
+        });
+
+        activeHarpoon.userData = {
+            spawnTime: Date.now(),
+            startX: playerGroup.position.x,
+            startZ: playerGroup.position.z,
+            targetX: target.group.position.x,
+            targetZ: target.group.position.z,
+            startY: startY,
+            targetY: targetY 
+        };
+
+        scene.add(activeHarpoon);
+
+        harpoonTimeout = setTimeout(() => {
+            if (activeHarpoon) {
+                scene.remove(activeHarpoon);
+                activeHarpoon = null;
+            }
+        }, 500);
+
+    } else {
+        // Fallback
+        netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
+        netSlashMat.opacity = 1;
+    }
+
+    ///////////////
 
     if (target.data.hp <= 0) {
         target.data.active = false;
@@ -2409,7 +2503,6 @@ function animate() {
     }
 
     if (typeof activeSwordfish !== 'undefined' && activeSwordfish) {
-        // Calcula a idade da espada em milissegundos
         const age = Date.now() - activeSwordfish.userData.spawnTime;
 
         activeSwordfish.traverse((child) => {
@@ -2420,6 +2513,28 @@ function animate() {
                 } else if (age > 600) {
                     //Fade Out suave 
                     child.material.opacity = Math.max(0, 1.0 - ((age - 600) / 300));
+                } else {
+                    child.material.opacity = 1.0;
+                }
+            }
+        });
+    }
+
+    if (typeof activeHarpoon !== 'undefined' && activeHarpoon) {
+        const age = Date.now() - activeHarpoon.userData.spawnTime;
+        
+        const flightProgress = Math.min(1, age / 100); 
+
+        activeHarpoon.position.x = activeHarpoon.userData.startX + (activeHarpoon.userData.targetX - activeHarpoon.userData.startX) * flightProgress;
+        activeHarpoon.position.z = activeHarpoon.userData.startZ + (activeHarpoon.userData.targetZ - activeHarpoon.userData.startZ) * flightProgress;
+        activeHarpoon.position.y = activeHarpoon.userData.startY + (activeHarpoon.userData.targetY - activeHarpoon.userData.startY) * flightProgress;
+
+        activeHarpoon.traverse((child) => {
+            if (child.isMesh && child.material) {
+                if (age < 50) {
+                    child.material.opacity = age / 50;
+                } else if (age > 200) {
+                    child.material.opacity = Math.max(0, 1.0 - ((age - 200) / 200));
                 } else {
                     child.material.opacity = 1.0;
                 }
