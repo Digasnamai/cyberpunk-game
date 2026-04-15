@@ -469,9 +469,9 @@ Stack dos diferentes andares da architecture
 
 /* Sonar Scan */
 @keyframes scan-pulse {
-    0% { box-shadow: -4px 4px 0px rgba(0, 255, 204, 0.1), 0 0 0px #00ffcc; }
-    50% { box-shadow: -4px 4px 0px rgba(0, 255, 204, 0.3), 0 0 20px #00ffcc; background: rgba(0, 255, 204, 0.4); }
-    100% { box-shadow: -4px 4px 0px rgba(0, 255, 204, 0.1), 0 0 0px #00ffcc; }
+    0% { box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 0px #ff0055; }
+    50% { box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 20px #ff0055; background: rgba(255, 0, 85, 0.4); }
+    100% { box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 0px #ff0055; }
 }
 
 .scanning-active { animation: scan-pulse 1s infinite; }

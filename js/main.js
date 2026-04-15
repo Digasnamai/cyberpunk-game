@@ -16,8 +16,27 @@ let currentMode = 'PHYSICAL'; // Define se estamos no modo 'PHYSICAL' (meatspace
 const scene = new THREE.Scene();
 
 // Pré-carregamento dos modelos 3D 
-let models = { hellhound: null, asp: null, guard: null, level1: null };
+let models = { hellhound: null, asp: null, guard: null, level1: null, netrunnerGltf: null, swordfishGltf: null };
+
+const clock = new THREE.Clock(); // Cronómetro para as animações
+let netPlayerMixer = null;       // Controlador da animação do jogador
+let netPlayerModel = null;       // O modelo 3D em si
+
+let swordfishMixer = null;
+let activeSwordfish = null;
+let swordfishTimeout = null;
+
 const loader = new GLTFLoader();
+
+loader.load('models/Swordfish.glb', function (gltf) {
+    models.swordfishGltf = gltf;
+    console.log("Swordfish model loaded!");
+});
+
+loader.load('models/low poly woman.glb', function (gltf) {
+    models.netrunnerGltf = gltf;
+    console.log("Netrunner model loaded!");
+});
 
 loader.load('models/level1.glb', function (gltf) {
     models.level1 = gltf.scene;
@@ -393,6 +412,7 @@ let currentLevelData = null;
 //define um estado inicial para os diferentes stats do player
 let player = {
     r: 0, c: 0, floor: 0, hp: 15, maxHp: 15, ap: 4, maxAp: 4, netAp: 2, maxNetAp: 2,
+    targetRot: 0,
     inventory: [], // Guarda IDs de chaves de encriptação (datapads)
     statuses: {
         disabledPrograms: { swordfish: 0, harpoon: 0, scales: 0, swim: 0 },
@@ -533,9 +553,15 @@ function executePathMovement(path) {
             return;
         }
 
-        //move o Jogador
-        player.r = path[stepIndex].r;
-        player.c = path[stepIndex].c;
+        const nextR = path[stepIndex].r;
+        const nextC = path[stepIndex].c;
+
+        // NOVO: Calcula o ângulo exato virado para o próximo quadrado!
+        player.targetRot = Math.atan2(nextC - player.c, nextR - player.r);
+
+        // move o Jogador
+        player.r = nextR;
+        player.c = nextC;
         stepIndex++;
 
         //movimenta os guardas simultaneamente
@@ -908,23 +934,48 @@ function buildPhysicalWorld() {
     physBody.position.y = 0.5;
     playerGroup.add(physBody);
 
-    // corpo de netrunning
-    netBody1 = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.2),
-        new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, depthTest: false, depthWrite: false })
-    );
-    netBody1.position.y = 0.5;
-    netBody1.renderOrder = 1000;
+    if (models.netrunnerGltf) {
+        netPlayerModel = SkeletonUtils.clone(models.netrunnerGltf.scene);
+        netPlayerModel.scale.set(1, 1, 1); // Ajusta a escala conforme necessário
+        netPlayerModel.position.y = 0; // Ajusta a altura 
 
-    netBody2 = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.35, 0),
-        new THREE.MeshStandardMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, depthTest: false, depthWrite: false })
-    );
-    netBody2.position.y = 0.5;
-    netBody2.renderOrder = 1000;
+        netPlayerModel.traverse((child) => {
+            if (child.isMesh) {
+                child.renderOrder = 1001;
 
-    playerGroup.add(netBody1);
-    playerGroup.add(netBody2);
+                if (child.material) {
+                    child.material.transparent = true;
+
+                    child.material.opacity = 1.0;
+                    child.material.depthWrite = true;
+                    child.material.depthTest = true;
+                }
+            }
+        });
+
+        // Configurar a Animação
+        netPlayerMixer = new THREE.AnimationMixer(netPlayerModel);
+
+        // Vai buscar a primeira animação (Idle) do ficheiro do Blender
+        const idleClip = models.netrunnerGltf.animations[0];
+        if (idleClip) {
+            const action = netPlayerMixer.clipAction(idleClip);
+            action.setLoop(THREE.LoopRepeat); // Força a animação a fazer Loop infinito
+            action.play(); // Inicia a animação
+        }
+
+        playerGroup.add(netPlayerModel);
+    } else {
+        // Fallback: se o modelo falhar a carregar usa geometria 
+        netBody1 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, depthTest: false, depthWrite: false }));
+        netBody1.position.y = 0.5; netBody1.renderOrder = 1000;
+
+        netBody2 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), new THREE.MeshStandardMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, depthTest: false, depthWrite: false }));
+        netBody2.position.y = 0.5; netBody2.renderOrder = 1000;
+
+        playerGroup.add(netBody1);
+        playerGroup.add(netBody2);
+    }
 
     // Adiciona o jogador  à cena
     scene.add(playerGroup);
@@ -1308,12 +1359,12 @@ function generateMirroredNetrun(terminalData) {
 
         for (let f = 1; f < currentTotalFloors; f++) {
             const spawnPoint = pullRandomSpawn();
-            
+
             // Se encontrou um quadrado válido, faz spawn do ICE nesse andar
             if (spawnPoint) {
                 spawnICE(f, spawnPoint.x, spawnPoint.z);
             } else {
-                break; 
+                break;
             }
         }
     }
@@ -1748,11 +1799,15 @@ window.addEventListener('mousedown', (e) => {
                     pushToLog("SCORPION ICE: MOVEMENT ROOTED!", true);
                     return;
                 }
+
+                player.targetRot = Math.atan2(data.x - player.c, data.z - player.r);
+
                 //move e consome NA
                 player.c = data.x;
                 player.r = data.z;
                 selectedTarget = null; //O movimento anula a seleção do alvo
                 consumeNetAction(1);
+
             } else if (dist > 1) {
                 pushToLog("INVALID MOVE. SELECT ADJACENT TILE.", true);
             }
@@ -2152,6 +2207,9 @@ document.getElementById('btn-harpoon').onclick = () => {
         return;
     }
 
+    //rotate player
+    player.targetRot = Math.atan2(target.data.x - player.c, target.data.z - player.r);
+
     // Apply Damage
     target.data.hp -= 3;
     netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
@@ -2202,11 +2260,69 @@ document.getElementById('btn-swordfish').onclick = () => {
         return;
     }
 
+    //rotate player
+    player.targetRot = Math.atan2(target.data.x - player.c, target.data.z - player.r);
+
     target.data.hp -= 5;
 
-    netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
-    netSlashEffect.scale.set(0.1, 0.1, 0.1);
-    netSlashMat.opacity = 1;
+    if (models.swordfishGltf) {
+
+        if (swordfishTimeout) {
+            clearTimeout(swordfishTimeout);
+            swordfishTimeout = null;
+        }
+
+        if (activeSwordfish) {
+            scene.remove(activeSwordfish);
+        }
+
+        activeSwordfish = SkeletonUtils.clone(models.swordfishGltf.scene);
+
+        activeSwordfish.scale.set(1.5, 1.5, 1.5);
+
+        activeSwordfish.position.set(target.group.position.x, target.group.position.y + 0.5, target.group.position.z);
+        activeSwordfish.rotation.y = player.targetRot;
+
+        activeSwordfish.traverse((child) => {
+            if (child.isMesh) {
+                child.renderOrder = 1000;
+                if (child.material) {
+                    child.material.depthTest = false;
+                    child.material.transparent = true;
+                    child.material.opacity = 0;
+                }
+            }
+        });
+
+        activeSwordfish.userData.spawnTime = Date.now();
+
+        scene.add(activeSwordfish);
+
+        swordfishMixer = new THREE.AnimationMixer(activeSwordfish);
+
+        const strikeClip = models.swordfishGltf.animations[0];
+
+        if (strikeClip) {
+            const action = swordfishMixer.clipAction(strikeClip);
+            action.setLoop(THREE.LoopOnce); 
+            action.clampWhenFinished = true; 
+            action.reset(); 
+            action.play();
+        }
+
+        swordfishTimeout = setTimeout(() => {
+            if (activeSwordfish) {
+                scene.remove(activeSwordfish);
+                activeSwordfish = null;
+            }
+        }, 900);
+
+    } else {
+        // Fallback
+        netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
+        netSlashEffect.scale.set(0.1, 0.1, 0.1);
+        netSlashMat.opacity = 1;
+    }
 
     if (target.data.hp <= 0) {
         target.data.active = false;
@@ -2214,7 +2330,7 @@ document.getElementById('btn-swordfish').onclick = () => {
         if (selectedTarget === target) selectedTarget = null;
         pushToLog("TARGET TERMINATED", true);
     } else {
-        pushToLog(`ICE INTEGRITY: ${target.data.hp * 10}%`, true);
+        pushToLog(`SWORDFISH -> ICE INTEGRITY: ${target.data.hp * 10}%`, true);
     }
 
     consumeNetAction(1);
@@ -2282,7 +2398,36 @@ document.getElementById('btn-end-turn').onclick = () => {
 function animate() {
     requestAnimationFrame(animate);
 
-    // Só processa animações se o jogador estiver efetivamente num nível ou tutorial
+    const delta = clock.getDelta();
+
+    if (netPlayerMixer) {
+        netPlayerMixer.update(delta);
+    }
+
+    if (swordfishMixer) {
+        swordfishMixer.update(delta);
+    }
+
+    if (typeof activeSwordfish !== 'undefined' && activeSwordfish) {
+        // Calcula a idade da espada em milissegundos
+        const age = Date.now() - activeSwordfish.userData.spawnTime;
+
+        activeSwordfish.traverse((child) => {
+            if (child.isMesh && child.material) {
+                if (age < 150) {
+                    // Fade In 
+                    child.material.opacity = age / 150;
+                } else if (age > 600) {
+                    //Fade Out suave 
+                    child.material.opacity = Math.max(0, 1.0 - ((age - 600) / 300));
+                } else {
+                    child.material.opacity = 1.0;
+                }
+            }
+        });
+    }
+
+    // Só processa animações se o jogador estiver num nível ou tutorial
     if (appState !== 'GAME' && appState !== 'TUTORIAL') return;
 
     // Define a opacidade base do mundo físico: 
@@ -2365,6 +2510,14 @@ function animate() {
     playerGroup.position.x += (player.c - playerGroup.position.x) * 0.2;
     playerGroup.position.z += (player.r - playerGroup.position.z) * 0.2;
 
+    //rotação do jogador
+    if (player.targetRot !== undefined) {
+        // Calcula a distância mais curta para a nova rotação (evita piruetas 360º)
+        const diff = player.targetRot - playerGroup.rotation.y;
+        const shortestDiff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        playerGroup.rotation.y += shortestDiff * 0.2;
+    }
+
     //ajuste suave de altura baseado no terreno ou no andar do netspace
     let targetY = 0;
     if (currentMode === 'NETRUN') {
@@ -2377,9 +2530,13 @@ function animate() {
     // gestão de visibilidade do jogador fisico ou virtual
     if (currentMode === 'NETRUN') {
         physBody.visible = false;
-        netBody1.visible = true;
-        netBody2.visible = true;
-        netBody2.rotation.y += 0.02; // Rotação constante
+
+        if (netPlayerModel) netPlayerModel.visible = true;
+        if (netBody1) netBody1.visible = true;
+        if (netBody2) {
+            netBody2.visible = true;
+            netBody2.rotation.y += 0.02;
+        }
 
         //efeito visual de ataque (expansão e desvanecimento do anel)
         netSlashEffect.visible = true;
@@ -2395,8 +2552,9 @@ function animate() {
     } else {
         //no mundo fisico retira a visibilidade aos efeitos de netspace
         physBody.visible = true;
-        netBody1.visible = false;
-        netBody2.visible = false;
+        if (netPlayerModel) netPlayerModel.visible = false;
+        if (netBody1) netBody1.visible = false;
+        if (netBody2) netBody2.visible = false;
         netSlashEffect.visible = false;
         netLight.visible = false;
     }
