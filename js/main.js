@@ -16,7 +16,7 @@ let currentMode = 'PHYSICAL'; // Define se estamos no modo 'PHYSICAL' (meatspace
 const scene = new THREE.Scene();
 
 // Pré-carregamento dos modelos 3D 
-let models = { hellhound: null, asp: null, guard: null, level1: null, netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null };
+let models = { hellhound: null, asp: null, guard: null, level1: null, netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null, doorGltf: null };
 
 const clock = new THREE.Clock(); // Cronómetro para as animações
 let netPlayerMixer = null;       // Controlador da animação do jogador
@@ -30,6 +30,11 @@ let activeHarpoon = null;
 let harpoonTimeout = null;
 
 const loader = new GLTFLoader();
+
+loader.load('models/Door.glb', function (gltf) {
+    models.doorGltf = gltf;
+    console.log("Door model loaded!");
+});
 
 loader.load('models/Harpoon.glb', function (gltf) {
     models.harpoonGltf = gltf;
@@ -571,7 +576,7 @@ function executePathMovement(path) {
                     } else if (nextLevel === 5) {
                         showCharacterDialogue(mission5Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 6) {
-                        showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); }); 
+                        showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); });
                     } else {
                         //se for um nível sem diálogo
                         startLevel(nextLevel);
@@ -806,34 +811,49 @@ function buildPhysicalWorld() {
             //Portas
             if (type === 3) {
                 const physDoorGroup = new THREE.Group();
-                physDoorGroup.position.set(c, tileY + 0.75, r);
-
                 const dData = currentLevelData.doors.find(d => d.r === r && d.c === c);
 
-                //roda a porta de acordo com a sua orientação
+                // Roda a porta dependendo se é vertical ou horizontal
                 if (dData && dData.dir === 'vertical') {
                     physDoorGroup.rotation.y = Math.PI / 2;
                 } else {
                     physDoorGroup.rotation.y = 0;
                 }
 
-                // Constroi duas metades da porta 
-                const doorGeo = new THREE.BoxGeometry(0.5, 1.5, 0.2);
-                const doorMat = new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.2, transparent: true });
+                let physDoorLeft, physDoorRight;
 
-                const physDoorLeft = new THREE.Mesh(doorGeo, doorMat);
-                physDoorLeft.position.set(-0.25, 0, 0);
-                physDoorLeft.raycast = () => { };
+                if (models.doorGltf) {
+                    physDoorGroup.position.set(c, tileY, r);
 
-                const physDoorRight = new THREE.Mesh(doorGeo, doorMat.clone());
-                physDoorRight.position.set(0.25, 0, 0);
-                physDoorRight.raycast = () => { };
+                    const doorScene = models.doorGltf.scene.clone();
 
-                physDoorGroup.add(physDoorLeft);
-                physDoorGroup.add(physDoorRight);
+                    // doorScene.scale.set(1, 1, 1); 
+
+                    physDoorLeft = doorScene.getObjectByName('left');
+                    physDoorRight = doorScene.getObjectByName('right');
+
+                    if (physDoorLeft && physDoorLeft.material) physDoorLeft.material = physDoorLeft.material.clone();
+                    if (physDoorRight && physDoorRight.material) physDoorRight.material = physDoorRight.material.clone();
+
+                    physDoorGroup.add(doorScene);
+                } else {
+                    //caso o ficheiro falhe a carregar
+                    physDoorGroup.position.set(c, tileY + 0.75, r);
+                    const doorGeo = new THREE.BoxGeometry(0.5, 1.5, 0.2);
+                    const doorMat = new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.2, transparent: true });
+
+                    physDoorLeft = new THREE.Mesh(doorGeo, doorMat);
+                    physDoorLeft.position.set(-0.25, 0, 0);
+                    physDoorRight = new THREE.Mesh(doorGeo, doorMat.clone());
+                    physDoorRight.position.set(0.25, 0, 0);
+
+                    physDoorGroup.add(physDoorLeft);
+                    physDoorGroup.add(physDoorRight);
+                }
+
                 physGridGroup.add(physDoorGroup);
 
-                // Guarda as meshes na memória do nível para que possam abrir quando o terminal for hacked
+                //guarda para mais tarde serem animadas
                 if (dData) {
                     dData.leftMesh = physDoorLeft;
                     dData.rightMesh = physDoorRight;
@@ -1738,10 +1758,10 @@ window.addEventListener('mousedown', (e) => {
                         if (targetDoor) {
                             targetDoor.unlocked = true;
 
-                            targetDoor.leftMesh.material.color.setHex(0x00ffcc);
-                            targetDoor.leftMesh.material.emissive.setHex(0x00ffcc);
-                            targetDoor.rightMesh.material.color.setHex(0x00ffcc);
-                            targetDoor.rightMesh.material.emissive.setHex(0x00ffcc);
+                            //targetDoor.leftMesh.material.color.setHex(0x00ffcc);
+                            //targetDoor.leftMesh.material.emissive.setHex(0x00ffcc);
+                            //targetDoor.rightMesh.material.color.setHex(0x00ffcc);
+                            //targetDoor.rightMesh.material.emissive.setHex(0x00ffcc);
                         }
                         successMessage = "CORE COMPROMISED. DOOR UNLOCKED.";
 
@@ -2239,10 +2259,9 @@ document.getElementById('btn-harpoon').onclick = () => {
     //rotate player
     player.targetRot = Math.atan2(target.data.x - player.c, target.data.z - player.r);
 
-    // Apply Damage
+    //apply Damage
     target.data.hp -= 3;
-    
-    ///////////////////
+
     if (models.harpoonGltf) {
         if (harpoonTimeout) {
             clearTimeout(harpoonTimeout);
@@ -2252,36 +2271,32 @@ document.getElementById('btn-harpoon').onclick = () => {
             scene.remove(activeHarpoon);
         }
 
-        activeHarpoon = models.harpoonGltf.scene.clone();
-        activeHarpoon.scale.set(2.5, 2.5, 2.5); 
-        
         const startY = playerGroup.position.y + 1.5;
         const targetY = target.group.position.y + 0.25;
-        
-        // Calcula a distância horizontal entre o jogador e o alvo
+
+        activeHarpoon = new THREE.Group();
+
+        activeHarpoon.position.set(playerGroup.position.x, startY, playerGroup.position.z);
+        activeHarpoon.lookAt(target.group.position.x, targetY, target.group.position.z);
+
+        const harpoonMesh = models.harpoonGltf.scene.clone();
+        activeHarpoon.scale.set(2.5, 2.5, 2.5);
+
+        harpoonMesh.rotation.y = Math.PI;
+
+        /*
         const dx = target.group.position.x - playerGroup.position.x;
         const dz = target.group.position.z - playerGroup.position.z;
         const distXZ = Math.sqrt(dx * dx + dz * dz);
         
-        // Calcula o ângulo vertical
         const pitchAngle = Math.atan2(targetY - startY, distXZ);
 
         activeHarpoon.rotation.y = player.targetRot + Math.PI;
         
         activeHarpoon.rotation.x = -pitchAngle; 
-        
-        activeHarpoon.position.set(playerGroup.position.x, startY, playerGroup.position.z);
+        */
 
-        activeHarpoon.traverse((child) => {
-            if (child.isMesh) {
-                child.renderOrder = 1001;
-                if (child.material) {
-                    child.material.depthTest = false;
-                    child.material.transparent = true;
-                    child.material.opacity = 0;
-                }
-            }
-        });
+        activeHarpoon.add(harpoonMesh);
 
         activeHarpoon.userData = {
             spawnTime: Date.now(),
@@ -2290,7 +2305,7 @@ document.getElementById('btn-harpoon').onclick = () => {
             targetX: target.group.position.x,
             targetZ: target.group.position.z,
             startY: startY,
-            targetY: targetY 
+            targetY: targetY
         };
 
         scene.add(activeHarpoon);
@@ -2303,12 +2318,11 @@ document.getElementById('btn-harpoon').onclick = () => {
         }, 500);
 
     } else {
-        // Fallback
+        //fallback
         netSlashEffect.position.set(target.group.position.x, 0.6, target.group.position.z);
         netSlashMat.opacity = 1;
     }
 
-    ///////////////
 
     if (target.data.hp <= 0) {
         target.data.active = false;
@@ -2398,9 +2412,9 @@ document.getElementById('btn-swordfish').onclick = () => {
 
         if (strikeClip) {
             const action = swordfishMixer.clipAction(strikeClip);
-            action.setLoop(THREE.LoopOnce); 
-            action.clampWhenFinished = true; 
-            action.reset(); 
+            action.setLoop(THREE.LoopOnce);
+            action.clampWhenFinished = true;
+            action.reset();
             action.play();
         }
 
@@ -2522,8 +2536,8 @@ function animate() {
 
     if (typeof activeHarpoon !== 'undefined' && activeHarpoon) {
         const age = Date.now() - activeHarpoon.userData.spawnTime;
-        
-        const flightProgress = Math.min(1, age / 100); 
+
+        const flightProgress = Math.min(1, age / 100);
 
         activeHarpoon.position.x = activeHarpoon.userData.startX + (activeHarpoon.userData.targetX - activeHarpoon.userData.startX) * flightProgress;
         activeHarpoon.position.z = activeHarpoon.userData.startZ + (activeHarpoon.userData.targetZ - activeHarpoon.userData.startZ) * flightProgress;
@@ -2546,7 +2560,7 @@ function animate() {
     if (appState !== 'GAME' && appState !== 'TUTORIAL') return;
 
     // Define a opacidade base do mundo físico: 
-    // Se o jogador estiver no Netrun, o mundo real fica quase invisível (0.15)
+    // Se o jogador estiver Netrunning, o mundo real fica quase invisível (0.15)
     const targetPhysOp = currentMode === 'NETRUN' ? 0.15 : 1.0;
 
     // Tweening visual para malhas, highlights do modo Netrun, etc.
@@ -2706,8 +2720,8 @@ function animate() {
     // Animação de abertura das portas (deslizar para os lados)
     currentLevelData.doors.forEach(d => {
         if (d.unlocked && d.leftMesh && d.rightMesh) {
-            d.leftMesh.position.x += (-0.85 - d.leftMesh.position.x) * 0.1;
-            d.rightMesh.position.x += (0.85 - d.rightMesh.position.x) * 0.1;
+            d.leftMesh.position.x += (-0.65 - d.leftMesh.position.x) * 0.1;
+            d.rightMesh.position.x += (0.65 - d.rightMesh.position.x) * 0.1;
         }
     });
 
@@ -2812,7 +2826,68 @@ function animate() {
     }
 
     // Renderiza a cena final com a câmara atualizada
-    renderer.render(scene, camera);
+    renderer.render(scene, camera); {
+        const physDoorGroup = new THREE.Group();
+        const dData = currentLevelData.doors.find(d => d.r === r && d.c === c);
+
+        // Roda o grupo inteiro da porta dependendo se é vertical ou horizontal
+        if (dData && dData.dir === 'vertical') {
+            physDoorGroup.rotation.y = Math.PI / 2;
+        } else {
+            physDoorGroup.rotation.y = 0;
+        }
+
+        let physDoorLeft, physDoorRight;
+
+        if (models.doorGltf) {
+            // A tua porta do Blender deve ter a base no Z=0 / Y=0, logo não precisamos do +0.75 de altura
+            physDoorGroup.position.set(c, tileY, r);
+
+            // Clona a cena da porta
+            const doorScene = models.doorGltf.scene.clone();
+
+            // Podes ajustar a escala aqui se a porta vier gigante ou minúscula do Blender
+            // doorScene.scale.set(1, 1, 1); 
+
+            // Procura as metades pelos nomes exatos que usaste no Blender
+            physDoorLeft = doorScene.getObjectByName('left');
+            physDoorRight = doorScene.getObjectByName('right');
+
+            // Fallback de segurança: se ele não encontrar os nomes, pega nas duas primeiras malhas
+            if (!physDoorLeft || !physDoorRight) {
+                physDoorLeft = doorScene.children[0];
+                physDoorRight = doorScene.children[1];
+            }
+
+            // Clona o material de cada metade! 
+            // Isto é vital para que, ao hackeares uma porta, não fiquem todas ciano ao mesmo tempo
+            if (physDoorLeft && physDoorLeft.material) physDoorLeft.material = physDoorLeft.material.clone();
+            if (physDoorRight && physDoorRight.material) physDoorRight.material = physDoorRight.material.clone();
+
+            physDoorGroup.add(doorScene);
+        } else {
+            // FALLBACK: O teu código antigo caso o ficheiro GLB falhe a carregar
+            physDoorGroup.position.set(c, tileY + 0.75, r);
+            const doorGeo = new THREE.BoxGeometry(0.5, 1.5, 0.2);
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.2, transparent: true });
+
+            physDoorLeft = new THREE.Mesh(doorGeo, doorMat);
+            physDoorLeft.position.set(-0.25, 0, 0);
+            physDoorRight = new THREE.Mesh(doorGeo, doorMat.clone());
+            physDoorRight.position.set(0.25, 0, 0);
+
+            physDoorGroup.add(physDoorLeft);
+            physDoorGroup.add(physDoorRight);
+        }
+
+        physGridGroup.add(physDoorGroup);
+
+        // Guarda as referências para o jogo saber que peças tem de animar e pintar
+        if (dData) {
+            dData.leftMesh = physDoorLeft;
+            dData.rightMesh = physDoorRight;
+        }
+    }
 }
 
 // Inicia o ciclo de animação
