@@ -17,7 +17,7 @@ const scene = new THREE.Scene();
 
 // Pré-carregamento dos modelos 3D 
 let models = {
-    hellhound: null, asp: null, krakenGltf: null,
+    hellhound: null, asp: null, krakenGltf: null, wispGltf: null, scorpionGltf: null,
     guard: null, doorGltf: null,
     level1: null,
     netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null
@@ -35,6 +35,16 @@ let activeHarpoon = null;
 let harpoonTimeout = null;
 
 const loader = new GLTFLoader();
+
+loader.load('models/Scorpion.glb', function (gltf) {
+    models.scorpionGltf = gltf;
+    console.log("Scorpion model loaded!");
+});
+
+loader.load('models/Wisp.glb', function (gltf) {
+    models.wispGltf = gltf;
+    console.log("Wisp model loaded!");
+});
 
 loader.load('models/Kraken.glb', function (gltf) {
     models.krakenGltf = gltf;
@@ -423,6 +433,8 @@ const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera(-8 * aspect, 8 * aspect, 8, -8, 0.1, 1000);
 camera.position.set(10, 10, 10);
 camera.lookAt(0, 0, 0);
+let cameraShakeTime = 0;
+let cameraShakeIntensity = 0;
 
 //definições da luz
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -1498,12 +1510,55 @@ function spawnICE(f, x, z) {
         }
     }
     else if (type === 'Scorpion') {
-        color = 0x00ff00;
-        b = new THREE.Mesh(new THREE.TetrahedronGeometry(0.5), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
+        color = 0x00ff00; 
+        
+        if (models.scorpionGltf) {
+            b = SkeletonUtils.clone(models.scorpionGltf.scene);
+            //b.scale.set(0.4, 0.4, 0.4); 
+            b.position.y = -0.35; 
+
+            const mixer = new THREE.AnimationMixer(b);
+            const idleClip = models.scorpionGltf.animations[0];
+            if (idleClip) {
+                const action = mixer.clipAction(idleClip);
+                action.setLoop(THREE.LoopRepeat);
+                action.play();
+            }
+            
+            b.userData.mixer = mixer;
+
+        } else {
+            b = new THREE.Mesh(new THREE.TetrahedronGeometry(0.5), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
+        }
     }
     else if (type === 'Wisp') {
         color = 0xffffff;
-        b = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
+        if (models.wispGltf) {
+            b = SkeletonUtils.clone(models.wispGltf.scene);
+            //b.scale.set(0.4, 0.4, 0.4); 
+            b.position.y = 0.2; 
+
+            b.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({ color: color, emissive: color });
+                }
+            });
+
+            const mixer = new THREE.AnimationMixer(b);
+            const idleClip = models.wispGltf.animations[0];
+            if (idleClip) {
+                const action = mixer.clipAction(idleClip);
+                action.setLoop(THREE.LoopRepeat);
+                action.play();
+            }
+            
+            b.userData.mixer = mixer;
+
+        } else {
+            //caso o modelo falhe a carregar
+            b = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
+        }
+    
     }
     else if (type === 'Hellhound') {
         color = 0xff4400;
@@ -1540,8 +1595,8 @@ function spawnICE(f, x, z) {
         }
     });
 
-    const iceLight = new THREE.PointLight(color, 30, 2); // Cor, Intensidade, Distância
-    iceLight.position.set(0, 0.8, 0.5); // Colocada um pouco acima e à frente para ter sombras
+    const iceLight = new THREE.PointLight(color, 2, 3); //Cor, Intensidade, Distância
+    iceLight.position.set(0, 0.8, 0.5); //um pouco acima ao lado para melhores sombras
     g.add(iceLight);
     
     // Guardamos a luz no grupo para a podermos pulsar na animação
@@ -1594,6 +1649,18 @@ function takeDamage(amt) {
     document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
 
     pushToLog(`NEURAL SPIKE! -${amt} HP`, true);
+
+    const damageOverlay = document.getElementById('damage-overlay');
+    if (damageOverlay) {
+        damageOverlay.classList.add('active');
+        // Remove a classe logo a seguir para o CSS tratar do fade-out
+        setTimeout(() => {
+            damageOverlay.classList.remove('active');
+        }, 150); 
+    }
+
+    cameraShakeTime = 0.3; 
+    cameraShakeIntensity = 0.5;
 
     if (player.hp <= 0) {
         pushToLog("FATAL ERROR. NEURAL LINK SEVERED.", true);
@@ -2758,6 +2825,19 @@ function animate() {
     camera.position.z += ((player.r + 10) - camera.position.z) * 0.1;
     camera.position.y += (10 - camera.position.y) * 0.1;
 
+    if (cameraShakeTime > 0) {
+        cameraShakeTime -= delta;
+        
+        // Aplica um desvio aleatório à posição da câmara
+        if (cameraShakeTime > 0) {
+            camera.position.x += (Math.random() - 0.5) * cameraShakeIntensity;
+            camera.position.z += (Math.random() - 0.5) * cameraShakeIntensity;
+            
+            // Diminui a intensidade gradualmente
+            cameraShakeIntensity *= 0.9; 
+        }
+    }
+
     //animação suave do braço robótico (se existir no nível)
     if (currentLevelData && currentLevelData.robotArm) {
         currentLevelData.robotArm.rotation.y += (currentLevelData.robotArmTargetRot - currentLevelData.robotArm.rotation.y) * 0.1;
@@ -2802,12 +2882,12 @@ function animate() {
     currentLevelData.drones.forEach(drone => {
         if (drone.mesh) {
             if (drone.active !== false) {
-                // Drone VIVO: flutua suavemente e desloca-se para a sua coordenada
+                //flutua e desloca-se para a sua coordenada
                 drone.mesh.position.x += (drone.c - drone.mesh.position.x) * 0.2;
                 drone.mesh.position.z += (drone.r - drone.mesh.position.z) * 0.2;
                 drone.mesh.position.y = 0.8 + Math.sin(Date.now() * 0.005) * 0.1;
             } else {
-                // Drone MORTO: desliza fisicamente para o chão
+                //desliza para o chão
                 drone.mesh.position.y += (0.1 - drone.mesh.position.y) * 0.2;
             }
         }
@@ -2833,8 +2913,8 @@ function animate() {
 
                 //vibração se estiver alerta, pulsação se estiver calmo
                 if (en.data.isAlerted) {
-                    en.group.position.x += (Math.random() - 0.5) * 0.1;
-                    en.group.position.z += (Math.random() - 0.5) * 0.1;
+                    en.group.position.x += (Math.random() - 0.5) * 0.05;
+                    en.group.position.z += (Math.random() - 0.5) * 0.05;
                     en.group.scale.y = 1;
                 } else {
                     en.group.scale.y = 1 + Math.sin(Date.now() * 0.005) * 0.1;
@@ -2845,7 +2925,7 @@ function animate() {
                 const baseColor = en.data.baseColor || 0xff0055;
 
                 const targetEmissive = isNear ? 0.3 : 0.1;
-                const targetLightInt = isNear ? 20 : 10;
+                const targetLightInt = isNear ? 5 : 2;
 
                 if (en.body.isGroup) {
                     en.body.traverse((child) => {
