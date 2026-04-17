@@ -18,7 +18,7 @@ const scene = new THREE.Scene();
 // Pré-carregamento dos modelos 3D 
 let models = {
     hellhound: null, asp: null, krakenGltf: null, wispGltf: null, scorpionGltf: null,
-    guard: null, doorGltf: null,
+    guard: null, doorGltf: null, cameraGltf: null,
     level1: null,
     netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null
 };
@@ -35,6 +35,11 @@ let activeHarpoon = null;
 let harpoonTimeout = null;
 
 const loader = new GLTFLoader();
+
+loader.load('models/Camera.glb', function (gltf) {
+    models.cameraGltf = gltf;
+    console.log("Camera model loaded!");
+});
 
 loader.load('models/Scorpion.glb', function (gltf) {
     models.scorpionGltf = gltf;
@@ -884,16 +889,44 @@ function buildPhysicalWorld() {
 
             //Camaras
             if (type === 5) {
-                const camMesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.4, 0.4, 0.4),
-                    new THREE.MeshStandardMaterial({ color: 0x222222, transparent: true })
-                );
-                camMesh.position.set(c, 1.2, r); // Altas na parede
+                let camMesh;
+                
+                if (models.cameraGltf) {
+                    camMesh = SkeletonUtils.clone(models.cameraGltf.scene);
+                    camMesh.scale.set(1.2, 1.2, 1.2);
+                    camMesh.position.set(c, 1.2, r); // na parede
+                    
+                    camMesh.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                            child.material = child.material.clone();
+                            child.material.transparent = true;
+                        }
+                    });
+                } else {
+                    camMesh = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.4, 0.4, 0.4),
+                        new THREE.MeshStandardMaterial({ color: 0x222222, transparent: true })
+                    );
+                    camMesh.position.set(c, 1.2, r);
+                }
 
                 camMesh.userData = { r, c, type: 'camera' };
 
                 const cData = currentLevelData.cameras.find(cam => cam.r === r && cam.c === c);
-                if (cData) cData.mesh = camMesh;
+                if (cData) {
+                    cData.mesh = camMesh;
+                    
+                    // Define a rotação inicial com base na direção em que ela começa o nível!
+                    const initDir = cData.dirs[cData.dirIdx];
+                    if (initDir === 'up') camMesh.rotation.y = Math.PI;
+                    else if (initDir === 'down') camMesh.rotation.y = 0;
+                    else if (initDir === 'left') camMesh.rotation.y = -Math.PI / 2;
+                    else if (initDir === 'right') camMesh.rotation.y = Math.PI / 2;
+
+                    camMesh.rotation.y
+                    
+                    cData.targetRot = camMesh.rotation.y;
+                }
                 physGridGroup.add(camMesh);
             }
 
@@ -1086,11 +1119,35 @@ function updateVision() {
     if (currentLevelData.cameras) {
         currentLevelData.cameras.forEach(cam => {
             if (cam.active) {
-                const cDir = cam.dirs[cam.dirIdx];
-                drawVisionCone(cam.r, cam.c, cDir, 5, 0, 0); // Alcance de 5 quadrados
-                if (cam.mesh) cam.mesh.material.emissive.setHex(0xff0000);
+                const cDir = cam.dir || (cam.dirs ? cam.dirs[0] : 'down');
+                drawVisionCone(cam.r, cam.c, cDir, 5, 0, 0); //alcance de 5 quadrados
+                
+                if (cam.mesh) {
+                    if (cam.mesh.isGroup) {
+                        cam.mesh.traverse(child => { 
+                            if (child.isMesh && child.name === 'lente_led' && child.material) {
+                                child.material.emissive.setHex(0xff0000);
+                                child.material.emissiveIntensity = 2; 
+                            } 
+                        });
+                    } else {
+                        //fallback 
+                        cam.mesh.material.emissive.setHex(0xff0000);
+                    }
+                }
             } else {
-                if (cam.mesh) cam.mesh.material.emissive.setHex(0x000000);
+                // Desliga o LED 
+                if (cam.mesh) {
+                    if (cam.mesh.isGroup) {
+                        cam.mesh.traverse(child => { 
+                            if (child.isMesh && child.name === 'lente_led' && child.material) {
+                                child.material.emissive.setHex(0x000000); // Apaga a luz
+                            } 
+                        });
+                    } else {
+                        cam.mesh.material.emissive.setHex(0x000000);
+                    }
+                }
             }
         });
     }
@@ -1217,7 +1274,19 @@ function drawVisionCone(startR, startC, dir, length, startOffset = 1, spread = 1
 function checkPhysicalDetection() {
     const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
     if (inVision) {
-        pushToLog("CAUGHT!", false);
+        pushToLog("SIMULATION FAILED. CAUGHT. RECALCULATING...", false);
+
+        const damageOverlay = document.getElementById('damage-overlay');
+        if (damageOverlay) {
+            damageOverlay.classList.add('simulation'); // Muda o efeito de dano para Azul 
+            damageOverlay.classList.add('active');
+
+            setTimeout(() => {
+                damageOverlay.classList.remove('active');
+                // Remove a cor azul só depois do fade out acabar
+                setTimeout(() => damageOverlay.classList.remove('simulation'), 500);
+            }, 150);
+        }
 
         //retorna o jogador ao inicio do nivel
         player.r = currentLevelData.spawn.r;
@@ -1306,11 +1375,13 @@ scene.add(netLight);
 
 //cria os efeitos visuais de ataque (Swordfish e Harpoon)
 function initNetrun() {
-    netSlashMat = new THREE.MeshBasicMaterial({ color: 0xff0055, transparent: true, opacity: 0, depthTest: false });
-    netSlashEffect = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 8, 32), netSlashMat);
-    netSlashEffect.rotation.x = Math.PI / 2;
-    netSlashEffect.renderOrder = 999;
-    scene.add(netSlashEffect);
+    if (!netSlashEffect) {
+        netSlashMat = new THREE.MeshBasicMaterial({ color: 0xff0055, transparent: true, opacity: 0, depthTest: false });
+        netSlashEffect = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 8, 32), netSlashMat);
+        netSlashEffect.rotation.x = Math.PI / 2;
+        netSlashEffect.renderOrder = 999;
+        scene.add(netSlashEffect);
+    }
 }
 
 // adiciona divs no canto superior direito para representar os andares disponíveis
@@ -1485,7 +1556,7 @@ function spawnICE(f, x, z) {
         if (models.krakenGltf) {
             b = SkeletonUtils.clone(models.krakenGltf.scene);
             //b.scale.set(0.2, 0.2, 0.2);
-            b.position.y = -0.35; 
+            b.position.y = -0.35;
 
             b.traverse((child) => {
                 if (child.isMesh) {
@@ -1510,12 +1581,12 @@ function spawnICE(f, x, z) {
         }
     }
     else if (type === 'Scorpion') {
-        color = 0x00ff00; 
-        
+        color = 0x00ff00;
+
         if (models.scorpionGltf) {
             b = SkeletonUtils.clone(models.scorpionGltf.scene);
             //b.scale.set(0.4, 0.4, 0.4); 
-            b.position.y = -0.35; 
+            b.position.y = -0.35;
 
             const mixer = new THREE.AnimationMixer(b);
             const idleClip = models.scorpionGltf.animations[0];
@@ -1524,7 +1595,7 @@ function spawnICE(f, x, z) {
                 action.setLoop(THREE.LoopRepeat);
                 action.play();
             }
-            
+
             b.userData.mixer = mixer;
 
         } else {
@@ -1536,7 +1607,7 @@ function spawnICE(f, x, z) {
         if (models.wispGltf) {
             b = SkeletonUtils.clone(models.wispGltf.scene);
             //b.scale.set(0.4, 0.4, 0.4); 
-            b.position.y = 0.2; 
+            b.position.y = 0.2;
 
             b.traverse((child) => {
                 if (child.isMesh) {
@@ -1551,14 +1622,14 @@ function spawnICE(f, x, z) {
                 action.setLoop(THREE.LoopRepeat);
                 action.play();
             }
-            
+
             b.userData.mixer = mixer;
 
         } else {
             //caso o modelo falhe a carregar
             b = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
         }
-    
+
     }
     else if (type === 'Hellhound') {
         color = 0xff4400;
@@ -1586,10 +1657,10 @@ function spawnICE(f, x, z) {
                 child.material.transparent = true;
 
                 // ao invés de ter de alterar tudo em blender defino as propriedades aqui
-                child.material.color.setHex(color); 
-                child.material.emissive.setHex(color); 
-                child.material.emissiveIntensity = 0; 
-                child.material.metalness = 0.6; 
+                child.material.color.setHex(color);
+                child.material.emissive.setHex(color);
+                child.material.emissiveIntensity = 0;
+                child.material.metalness = 0.6;
                 child.material.roughness = 0.2;
             }
         }
@@ -1598,7 +1669,7 @@ function spawnICE(f, x, z) {
     const iceLight = new THREE.PointLight(color, 2, 3); //Cor, Intensidade, Distância
     iceLight.position.set(0, 0.8, 0.5); //um pouco acima ao lado para melhores sombras
     g.add(iceLight);
-    
+
     // Guardamos a luz no grupo para a podermos pulsar na animação
     g.userData.personalLight = iceLight;
 
@@ -1637,6 +1708,8 @@ function toggleMode(mode) {
 
 //sistema de Dano
 function takeDamage(amt) {
+    if (player.hp <= 0) return;
+
     //verifica se o jogador tem o escudo
     if (player.statuses.scalesBarrier > 0) {
         player.statuses.scalesBarrier--;
@@ -1656,15 +1729,66 @@ function takeDamage(amt) {
         // Remove a classe logo a seguir para o CSS tratar do fade-out
         setTimeout(() => {
             damageOverlay.classList.remove('active');
-        }, 150); 
+        }, 150);
     }
 
-    cameraShakeTime = 0.3; 
+    cameraShakeTime = 0.3;
     cameraShakeIntensity = 0.5;
 
     if (player.hp <= 0) {
-        pushToLog("FATAL ERROR. NEURAL LINK SEVERED.", true);
-        setTimeout(() => location.reload(), 2000);
+        renderer.domElement.style.display = 'none';
+        switchScreen('bsod-screen');
+
+        const bsodText = document.getElementById('bsod-text');
+        bsodText.innerHTML = '';
+
+        //caveira no background
+        const asciiSkull = [
+            "     .... NO! ...                  ... MNO! ...    ",
+            "   ..... MNO!! ...................... MNNOO! ...   ",
+            " ..... MMNO! ......................... MNNOO!! .   ",
+            "..... MNOONNOO!   MMMMMMMMMMPPPOII!   MNNO!!!! .   ",
+            " ... !O! NNO! MMMMMMMMMMMMMPPPOOOII!! NO! ....     ",
+            "    ...... ! MMMMMMMMMMMMMPPPPOOOOIII! ! ...       ",
+            "   ........ MMMMMMMMMMMMPPPPPOOOOOOII!! .....      ",
+            "   ........ MMMMMOOOOOOPPPPPPPPOOOOMII! ...        ",
+            "    ....... MMMMM..    OPPMMP    .,OMI! ....       ",
+            "     ...... MMMM::   o.,OPMP,.o   ::I!! ...        ",
+            "         .... NNM:::.,,OOPM!P,.::::!! ....         ",
+            "          .. MMNNNNNOOOOPMO!!IIPPO!!O! .....       ",
+            "         ... MMMMMNNNNOO:!!:!!IPPPPOO! ....        ",
+            "           .. MMMMMNNOOMMNNIIIPPPOO!! ......       ",
+            "          ...... MMMONNMMNNNIIIOO!..........       ",
+            "       ....... MN MOMMMNNNIIIIIO! OO ..........    ",
+            "    ......... MNO! IiiiiiiiiiiiI OOOO ...........  ",
+            "  ...... NNN.MNO! . O!!!!!!!!!O . OONO NO! ........",
+            "   .... MNNNNNO! ...OOOOOOOOOOO .  MMNNON!........ ",
+            "   ...... MNNNNO! .. PPPPPPPPP .. MMNON!........   ",
+            "      ...... OO! ................. ON! .......     ",
+            "         ................................          "
+        ].join('\n');
+        document.getElementById('bsod-skull').innerText = asciiSkull;
+
+        //mensagem no centro do ecrã
+        const msg = "FOREIGN ACCESS DETECTED.\nCEREBRAL CORTEX FRYING...\nNEURAL LINK SEVERED.\n\nGOODBYE, RUNNER.";
+
+        //efeito typewriter
+        let i = 0;
+        function typeBSOD() {
+            if (i < msg.length) {
+                // Se for um \n, muda de linha com um <br>, senão escreve a letra
+                bsodText.innerHTML += msg.charAt(i) === '\n' ? '<br>' : msg.charAt(i);
+                i++;
+                setTimeout(typeBSOD, 50); // Velocidade do teclado
+            } else {
+                // Depois de acabar de escrever, espera 3 segundos e reinicia o nível atual
+                setTimeout(() => {
+                    startLevel(currentLevelIndex);
+                }, 2000);
+            }
+        }
+
+        typeBSOD();
     }
 }
 
@@ -2667,11 +2791,11 @@ function animate() {
         activeHarpoon.traverse((child) => {
             if (child.isMesh && child.material) {
                 const mats = Array.isArray(child.material) ? child.material : [child.material];
-                
+
                 mats.forEach(mat => {
                     if (!mat.transparent) {
                         mat.transparent = true;
-                        mat.needsUpdate = true; 
+                        mat.needsUpdate = true;
                     }
 
                     if (age < 50) {
@@ -2827,14 +2951,14 @@ function animate() {
 
     if (cameraShakeTime > 0) {
         cameraShakeTime -= delta;
-        
+
         // Aplica um desvio aleatório à posição da câmara
         if (cameraShakeTime > 0) {
             camera.position.x += (Math.random() - 0.5) * cameraShakeIntensity;
             camera.position.z += (Math.random() - 0.5) * cameraShakeIntensity;
-            
+
             // Diminui a intensidade gradualmente
-            cameraShakeIntensity *= 0.9; 
+            cameraShakeIntensity *= 0.9;
         }
     }
 
@@ -2929,14 +3053,14 @@ function animate() {
 
                 if (en.body.isGroup) {
                     en.body.traverse((child) => {
-                        if (child.isMesh && child.material) { 
-                            child.material.emissive.setHex(baseColor); 
-                            child.material.emissiveIntensity = targetEmissive; 
+                        if (child.isMesh && child.material) {
+                            child.material.emissive.setHex(baseColor);
+                            child.material.emissiveIntensity = targetEmissive;
                         }
                     });
                 } else {
                     if (en.body.material) {
-                        en.body.material.emissive.setHex(baseColor); 
+                        en.body.material.emissive.setHex(baseColor);
                         en.body.material.emissiveIntensity = targetEmissive;
                     }
                 }
@@ -2981,8 +3105,8 @@ function animate() {
     }
 
     // Renderiza a cena final com a câmara atualizada
-    renderer.render(scene, camera); 
-    
+    renderer.render(scene, camera);
+
 }
 
 // Inicia o ciclo de animação

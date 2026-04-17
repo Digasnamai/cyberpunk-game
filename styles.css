@@ -597,3 +597,81 @@ Log dinamico
     opacity: 1;
     transition: opacity 0.05s ease-in;
 }
+
+/*altero o efeito para Azul para o reiniciar em meatspace */
+#damage-overlay.simulation {
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 200, 255, 0.15),
+        rgba(0, 200, 255, 0.15) 2px,
+        transparent 2px,
+        transparent 4px
+    );
+    box-shadow: inset 0 0 100px rgba(0, 200, 255, 0.5);
+}
+
+
+/* death screen */
+
+#bsod-screen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #050000;
+    /* Scanlines vermelhas de fundo */
+    background-image: repeating-linear-gradient(
+        0deg, 
+        rgba(255, 0, 85, 0.05), 
+        rgba(255, 0, 85, 0.05) 2px, 
+        transparent 2px, 
+        transparent 4px
+    );
+    position: relative;
+    overflow: hidden;
+}
+
+#bsod-skull {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 0, 85, 0.2);
+    
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre; 
+    
+    font-size: 1.5vw;
+    text-align: center;
+    pointer-events: none; 
+    margin: 0;
+    z-index: 1;
+    line-height: 1.1;
+}
+
+#bsod-text {
+    position: relative;
+    z-index: 2; 
+    color: #ff0055;
+    font-family: monospace;
+    font-size: 24px;
+    text-align: center;
+    text-shadow: 0 0 10px #ff0055;
+}
+
+#bsod-screen.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+/* animação para a Caveira do death screen pulsar */
+@keyframes skullPulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 0.7; }
+    90% { opacity: 0.5; }
+    95% { opacity: 0.10; } 
+    100% { opacity: 0.5; }
+}
+
+.glitch-skull {
+    animation: skullPulse 3s infinite normal;
+}
