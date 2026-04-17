@@ -16,7 +16,12 @@ let currentMode = 'PHYSICAL'; // Define se estamos no modo 'PHYSICAL' (meatspace
 const scene = new THREE.Scene();
 
 // Pré-carregamento dos modelos 3D 
-let models = { hellhound: null, asp: null, guard: null, level1: null, netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null, doorGltf: null };
+let models = {
+    hellhound: null, asp: null, krakenGltf: null,
+    guard: null, doorGltf: null,
+    level1: null,
+    netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null
+};
 
 const clock = new THREE.Clock(); // Cronómetro para as animações
 let netPlayerMixer = null;       // Controlador da animação do jogador
@@ -30,6 +35,11 @@ let activeHarpoon = null;
 let harpoonTimeout = null;
 
 const loader = new GLTFLoader();
+
+loader.load('models/Kraken.glb', function (gltf) {
+    models.krakenGltf = gltf;
+    console.log("Kraken model loaded!");
+});
 
 loader.load('models/Door.glb', function (gltf) {
     models.doorGltf = gltf;
@@ -1460,7 +1470,32 @@ function spawnICE(f, x, z) {
     }
     else if (type === 'Kraken') {
         color = 0x0088ff;
-        b = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
+        if (models.krakenGltf) {
+            b = SkeletonUtils.clone(models.krakenGltf.scene);
+            //b.scale.set(0.2, 0.2, 0.2);
+            b.position.y = -0.35; 
+
+            b.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 });
+                }
+            });
+
+            //cria o mixer para este kraken
+            const mixer = new THREE.AnimationMixer(b);
+            const idleClip = models.krakenGltf.animations[0];
+            if (idleClip) {
+                const action = mixer.clipAction(idleClip);
+                action.setLoop(THREE.LoopRepeat);
+                action.play();
+            }
+
+            //guarda o mixer dentro do objeto 
+            b.userData.mixer = mixer;
+
+        } else {
+            b = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 2 }));
+        }
     }
     else if (type === 'Scorpion') {
         color = 0x00ff00;
@@ -1494,15 +1529,34 @@ function spawnICE(f, x, z) {
                 child.material.depthTest = false;
                 child.material.depthWrite = false;
                 child.material.transparent = true;
+
+                // ao invés de ter de alterar tudo em blender defino as propriedades aqui
+                child.material.color.setHex(color); 
+                child.material.emissive.setHex(color); 
+                child.material.emissiveIntensity = 0; 
+                child.material.metalness = 0.6; 
+                child.material.roughness = 0.2;
             }
         }
     });
+
+    const iceLight = new THREE.PointLight(color, 30, 2); // Cor, Intensidade, Distância
+    iceLight.position.set(0, 0.8, 0.5); // Colocada um pouco acima e à frente para ter sombras
+    g.add(iceLight);
+    
+    // Guardamos a luz no grupo para a podermos pulsar na animação
+    g.userData.personalLight = iceLight;
 
     g.add(b);
     g.position.set(x, -f * FLOOR_SPACING + 0.4, z);
     scene.add(g);
 
-    enemies.push({ data: { x, z, floor: f, hp: 10, active: true, isAlerted: false, type: type, baseColor: color }, group: g, body: b });
+    enemies.push({
+        data: { x, z, floor: f, hp: 10, active: true, isAlerted: false, type: type, baseColor: color },
+        group: g,
+        body: b,
+        mixer: b.userData && b.userData.mixer ? b.userData.mixer : null
+    });
 }
 
 /////////////////////////
@@ -2015,11 +2069,11 @@ function processNetrunTurn() {
 
                 //Faz o ICE brilhar durante 200ms
                 if (en.body.isGroup) {
-                    en.body.traverse((child) => { if (child.isMesh) child.material.emissiveIntensity = 20; });
-                    setTimeout(() => { if (en.data.active) en.body.traverse((child) => { if (child.isMesh) child.material.emissiveIntensity = 2; }); }, 200);
+                    en.body.traverse((child) => { if (child.isMesh && child.material) child.material.emissiveIntensity = 5; });
+                    setTimeout(() => { if (en.data.active) en.body.traverse((child) => { if (child.isMesh && child.material) child.material.emissiveIntensity = 0.6; }); }, 200);
                 } else {
-                    en.body.material.emissiveIntensity = 20;
-                    setTimeout(() => { if (en.data.active) en.body.material.emissiveIntensity = 2; }, 200);
+                    if (en.body.material) en.body.material.emissiveIntensity = 5;
+                    setTimeout(() => { if (en.data.active && en.body.material) en.body.material.emissiveIntensity = 0.6; }, 200);
                 }
             }
         }
@@ -2315,7 +2369,7 @@ document.getElementById('btn-harpoon').onclick = () => {
                 scene.remove(activeHarpoon);
                 activeHarpoon = null;
             }
-        }, 500);
+        }, 700);
 
     } else {
         //fallback
@@ -2545,13 +2599,24 @@ function animate() {
 
         activeHarpoon.traverse((child) => {
             if (child.isMesh && child.material) {
-                if (age < 50) {
-                    child.material.opacity = age / 50;
-                } else if (age > 200) {
-                    child.material.opacity = Math.max(0, 1.0 - ((age - 200) / 200));
-                } else {
-                    child.material.opacity = 1.0;
-                }
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                
+                mats.forEach(mat => {
+                    if (!mat.transparent) {
+                        mat.transparent = true;
+                        mat.needsUpdate = true; 
+                    }
+
+                    if (age < 50) {
+                        //fade in
+                        mat.opacity = age / 50;
+                    } else if (age > 200) {
+                        //Fade Out 
+                        mat.opacity = Math.max(0, 1.0 - ((age - 200) / 250));
+                    } else {
+                        mat.opacity = 1.0;
+                    }
+                });
             }
         });
     }
@@ -2752,9 +2817,15 @@ function animate() {
     if (currentMode === 'NETRUN') {
         enemies.forEach(en => {
             if (en.data.active) {
-                //movimento suave dos ICE
+
+                //animações dos ICE
+                if (en.mixer) {
+                    en.mixer.update(delta);
+                }
+
                 en.group.position.x += (en.data.x - en.group.position.x) * 0.2;
                 en.group.position.z += (en.data.z - en.group.position.z) * 0.2;
+
 
                 //sobe/desce conforme o jogador muda de andar
                 const targetEnemyY = netrunBaseY + (-en.data.floor * FLOOR_SPACING) + 0.4 + (player.floor * FLOOR_SPACING);
@@ -2769,26 +2840,30 @@ function animate() {
                     en.group.scale.y = 1 + Math.sin(Date.now() * 0.005) * 0.1;
                 }
 
-                // brilha mais intensamente se o jogador estiver perto (alcance de ataque)
+                // brilha mais intensamente se o jogador estiver perto
                 const isNear = (player.floor === en.data.floor && Math.abs(player.c - en.data.x) <= 1 && Math.abs(player.r - en.data.z) <= 1);
                 const baseColor = en.data.baseColor || 0xff0055;
 
-                if (isNear) {
-                    if (en.body.isGroup) {
-                        en.body.traverse((child) => {
-                            if (child.isMesh) { child.material.color.setHex(baseColor); child.material.emissiveIntensity = 4; }
-                        });
-                    } else {
-                        en.body.material.color.setHex(baseColor); en.body.material.emissiveIntensity = 4;
-                    }
+                const targetEmissive = isNear ? 0.3 : 0.1;
+                const targetLightInt = isNear ? 20 : 10;
+
+                if (en.body.isGroup) {
+                    en.body.traverse((child) => {
+                        if (child.isMesh && child.material) { 
+                            child.material.emissive.setHex(baseColor); 
+                            child.material.emissiveIntensity = targetEmissive; 
+                        }
+                    });
                 } else {
-                    if (en.body.isGroup) {
-                        en.body.traverse((child) => {
-                            if (child.isMesh) { child.material.color.setHex(baseColor); child.material.emissiveIntensity = 2; }
-                        });
-                    } else {
-                        en.body.material.color.setHex(baseColor); en.body.material.emissiveIntensity = 2;
+                    if (en.body.material) {
+                        en.body.material.emissive.setHex(baseColor); 
+                        en.body.material.emissiveIntensity = targetEmissive;
                     }
+                }
+
+                // Atualiza a intensidade da luz que criámos
+                if (en.group.userData.personalLight) {
+                    en.group.userData.personalLight.intensity = targetLightInt;
                 }
 
                 //só mostra inimigos que estejam no mesmo andar (ou durante um scan do Sonar)
@@ -2826,68 +2901,8 @@ function animate() {
     }
 
     // Renderiza a cena final com a câmara atualizada
-    renderer.render(scene, camera); {
-        const physDoorGroup = new THREE.Group();
-        const dData = currentLevelData.doors.find(d => d.r === r && d.c === c);
-
-        // Roda o grupo inteiro da porta dependendo se é vertical ou horizontal
-        if (dData && dData.dir === 'vertical') {
-            physDoorGroup.rotation.y = Math.PI / 2;
-        } else {
-            physDoorGroup.rotation.y = 0;
-        }
-
-        let physDoorLeft, physDoorRight;
-
-        if (models.doorGltf) {
-            // A tua porta do Blender deve ter a base no Z=0 / Y=0, logo não precisamos do +0.75 de altura
-            physDoorGroup.position.set(c, tileY, r);
-
-            // Clona a cena da porta
-            const doorScene = models.doorGltf.scene.clone();
-
-            // Podes ajustar a escala aqui se a porta vier gigante ou minúscula do Blender
-            // doorScene.scale.set(1, 1, 1); 
-
-            // Procura as metades pelos nomes exatos que usaste no Blender
-            physDoorLeft = doorScene.getObjectByName('left');
-            physDoorRight = doorScene.getObjectByName('right');
-
-            // Fallback de segurança: se ele não encontrar os nomes, pega nas duas primeiras malhas
-            if (!physDoorLeft || !physDoorRight) {
-                physDoorLeft = doorScene.children[0];
-                physDoorRight = doorScene.children[1];
-            }
-
-            // Clona o material de cada metade! 
-            // Isto é vital para que, ao hackeares uma porta, não fiquem todas ciano ao mesmo tempo
-            if (physDoorLeft && physDoorLeft.material) physDoorLeft.material = physDoorLeft.material.clone();
-            if (physDoorRight && physDoorRight.material) physDoorRight.material = physDoorRight.material.clone();
-
-            physDoorGroup.add(doorScene);
-        } else {
-            // FALLBACK: O teu código antigo caso o ficheiro GLB falhe a carregar
-            physDoorGroup.position.set(c, tileY + 0.75, r);
-            const doorGeo = new THREE.BoxGeometry(0.5, 1.5, 0.2);
-            const doorMat = new THREE.MeshStandardMaterial({ color: 0xff0055, emissive: 0xff0055, emissiveIntensity: 0.2, transparent: true });
-
-            physDoorLeft = new THREE.Mesh(doorGeo, doorMat);
-            physDoorLeft.position.set(-0.25, 0, 0);
-            physDoorRight = new THREE.Mesh(doorGeo, doorMat.clone());
-            physDoorRight.position.set(0.25, 0, 0);
-
-            physDoorGroup.add(physDoorLeft);
-            physDoorGroup.add(physDoorRight);
-        }
-
-        physGridGroup.add(physDoorGroup);
-
-        // Guarda as referências para o jogo saber que peças tem de animar e pintar
-        if (dData) {
-            dData.leftMesh = physDoorLeft;
-            dData.rightMesh = physDoorRight;
-        }
-    }
+    renderer.render(scene, camera); 
+    
 }
 
 // Inicia o ciclo de animação
