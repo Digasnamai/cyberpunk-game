@@ -354,6 +354,8 @@ function startLevel(levelNum) {
     // Reinicia os atributos do jogador, sendo o local inicial consoante a data do nível
     player.r = currentLevelData.spawn.r;
     player.c = currentLevelData.spawn.c;
+    player.checkpoint = { r: player.r, c: player.c };
+
     player.hp = player.maxHp;
     player.ap = player.maxAp;
     player.inventory = [];
@@ -1288,11 +1290,12 @@ function checkPhysicalDetection() {
             }, 150);
         }
 
-        //retorna o jogador ao inicio do nivel
-        player.r = currentLevelData.spawn.r;
-        player.c = currentLevelData.spawn.c;
+        //retorna o jogador ao ultimo checkpoint
+        player.r = player.checkpoint.r;
+        player.c = player.checkpoint.c;
 
         player.ap = player.maxAp;
+        
         if (currentLevelData.guards) currentLevelData.guards.forEach(g => g.dirIdx = 0);
         updateVision();
         document.getElementById('ap-display').innerText = player.ap;
@@ -1704,6 +1707,12 @@ function toggleMode(mode) {
     const logCurrent = document.getElementById('log-current');
     isNet ? pushToLog("CONNECTION ESTABLISHED. BYPASS SYSTEM CORE.", true) : pushToLog("AVOID DETECTION.", false);
     logCurrent.className = isNet ? 'log-current netrun' : 'log-current';
+
+    // guarda a posição atual como checkpoint quando se sai de um terminal
+    if (!isNet && player.checkpoint) {
+        player.checkpoint.r = player.r;
+        player.checkpoint.c = player.c;
+    }
 }
 
 //sistema de Dano
