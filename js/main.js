@@ -81,6 +81,11 @@ loader.load('models/level1.glb', function (gltf) {
     console.log("Level 1 Environment loaded!");
 });
 
+loader.load('models/level2.glb', function (gltf) {
+    models.level2 = gltf.scene;
+    console.log("Level 2 Environment loaded!");
+});
+
 loader.load('models/hellhound.glb', function (gltf) {
     models.hellhound = gltf.scene;
     console.log("Hellhound model loaded!");
@@ -472,6 +477,9 @@ let currentPath = [];
 let hoveredTile = null;
 let isPlayerMoving = false;
 
+let activeEnvMesh = null;
+let hoveredWallMesh = null;
+
 ///////////////////////
 // Fisica e pathfinding
 ///////////////////////
@@ -586,9 +594,7 @@ function executePathMovement(path) {
 
                     // Se não houver mais níveis (Fim do jogo), volta ao mapa
                     if (!LEVEL_DATA[nextLevel]) {
-                        appState = 'MAP';
-                        renderer.domElement.style.display = 'none';
-                        switchScreen('world-map');
+                        playEndingCutscene();
                         return;
                     }
 
@@ -729,7 +735,7 @@ function buildPhysicalWorld() {
     let envMesh = null;
     currentLevelData.heightMap = [];
 
-    //Se for o nível 1 e o modelo 3D estiver carregado adiciona-o
+    // Se for o nível 1 e o modelo 3D estiver carregado adiciona-o
     if (currentLevelIndex === 1 && models.level1) {
         envMesh = models.level1.clone();
         envMesh.position.set(0, 0, 0);
@@ -741,8 +747,34 @@ function buildPhysicalWorld() {
             currentLevelData.robotArmTargetRot = currentLevelData.robotArm.rotation.y;
             currentLevelData.robotArm.visible = false;
         }
+    }
+    // Nível 2
+    else if (currentLevelIndex === 2 && models.level2) {
+        envMesh = models.level2.clone();
+        envMesh.position.set(0, 0, 0);
+        envMesh.updateMatrixWorld(true);
+    }
+
+    if (envMesh) {
+        activeEnvMesh = envMesh; 
+
+        envMesh.traverse((child) => {
+            if (child.isMesh && child.name !== 'Floor' && child.material) {
+                child.material = child.material.clone();
+                child.material.transparent = true;
+                
+                child.userData.isWall = true; 
+                child.userData.originalOpacity = child.material.opacity !== undefined ? child.material.opacity : 1.0;
+                
+                //Força a parede a ser a última 
+                // coisa a ser desenhada, o que resolve o conflito das linhas naturalmente.
+                child.renderOrder = 3; 
+            }
+        });
 
         physGridGroup.add(envMesh);
+    } else {
+        activeEnvMesh = null; 
     }
 
     const downVector = new THREE.Vector3(0, -1, 0); // Vetor a apontar diretamente para baixo
@@ -892,12 +924,12 @@ function buildPhysicalWorld() {
             //Camaras
             if (type === 5) {
                 let camMesh;
-                
+
                 if (models.cameraGltf) {
                     camMesh = SkeletonUtils.clone(models.cameraGltf.scene);
                     camMesh.scale.set(1.2, 1.2, 1.2);
                     camMesh.position.set(c, 1.2, r); // na parede
-                    
+
                     camMesh.traverse((child) => {
                         if (child.isMesh && child.material) {
                             child.material = child.material.clone();
@@ -917,7 +949,7 @@ function buildPhysicalWorld() {
                 const cData = currentLevelData.cameras.find(cam => cam.r === r && cam.c === c);
                 if (cData) {
                     cData.mesh = camMesh;
-                    
+
                     // Define a rotação inicial com base na direção em que ela começa o nível!
                     const initDir = cData.dirs[cData.dirIdx];
                     if (initDir === 'up') camMesh.rotation.y = Math.PI;
@@ -926,7 +958,7 @@ function buildPhysicalWorld() {
                     else if (initDir === 'right') camMesh.rotation.y = Math.PI / 2;
 
                     camMesh.rotation.y
-                    
+
                     cData.targetRot = camMesh.rotation.y;
                 }
                 physGridGroup.add(camMesh);
@@ -1123,14 +1155,14 @@ function updateVision() {
             if (cam.active) {
                 const cDir = cam.dir || (cam.dirs ? cam.dirs[0] : 'down');
                 drawVisionCone(cam.r, cam.c, cDir, 5, 0, 0); //alcance de 5 quadrados
-                
+
                 if (cam.mesh) {
                     if (cam.mesh.isGroup) {
-                        cam.mesh.traverse(child => { 
+                        cam.mesh.traverse(child => {
                             if (child.isMesh && child.name === 'lente_led' && child.material) {
                                 child.material.emissive.setHex(0xff0000);
-                                child.material.emissiveIntensity = 2; 
-                            } 
+                                child.material.emissiveIntensity = 2;
+                            }
                         });
                     } else {
                         //fallback 
@@ -1141,10 +1173,10 @@ function updateVision() {
                 // Desliga o LED 
                 if (cam.mesh) {
                     if (cam.mesh.isGroup) {
-                        cam.mesh.traverse(child => { 
+                        cam.mesh.traverse(child => {
                             if (child.isMesh && child.name === 'lente_led' && child.material) {
                                 child.material.emissive.setHex(0x000000); // Apaga a luz
-                            } 
+                            }
                         });
                     } else {
                         cam.mesh.material.emissive.setHex(0x000000);
@@ -1295,7 +1327,7 @@ function checkPhysicalDetection() {
         player.c = player.checkpoint.c;
 
         player.ap = player.maxAp;
-        
+
         if (currentLevelData.guards) currentLevelData.guards.forEach(g => g.dirIdx = 0);
         updateVision();
         document.getElementById('ap-display').innerText = player.ap;
@@ -1841,10 +1873,33 @@ window.addEventListener('mousemove', (e) => {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
 
+    if (activeEnvMesh) {
+        let hitWall = false;
+        // Faz um raycast exclusivo ao modelo 3D do cenário
+        const envHits = raycaster.intersectObject(activeEnvMesh, true);
+
+        if (envHits.length > 0) {
+            // Encontra a primeira malha atingida que NÃO se chame "Floor"
+            const hit = envHits.find(i => i.object.isMesh && i.object.name !== 'Floor');
+
+            if (hit) {
+                hitWall = true;
+                hoveredWallMesh = hit.object;
+            }
+        }
+
+        // Se o rato não tocou em nenhuma parede, limpa o alvo para a animate() a voltar a solidificar
+        if (!hitWall) {
+            hoveredWallMesh = null;
+        }
+    }
+
     // verifica que tiles o raycast intersetou
-    const intersects = raycaster.intersectObjects(physGridGroup.children);
-    if (intersects.length > 0) {
-        const data = intersects[0].object.userData;
+    const intersects = raycaster.intersectObjects(physGridGroup.children, true);
+    const hitTile = intersects.find(i => i.object.userData && i.object.userData.r !== undefined && i.object.userData.c !== undefined);
+
+    if (hitTile) {
+        const data = hitTile.object.userData;
 
         //se não for um tile da grelha ignora
         if (data.r === undefined || data.c === undefined) return;
@@ -1893,12 +1948,14 @@ window.addEventListener('mousedown', (e) => {
 
     // mundo físico
     if (currentMode === 'PHYSICAL') {
-        const intersects = raycaster.intersectObjects(physGridGroup.children);
-        if (intersects.length > 0) {
-            const data = intersects[0].object.userData;
+        // Adiciona o 'true' para procurar a fundo nos grupos
+        const intersects = raycaster.intersectObjects(physGridGroup.children, true);
 
-            if (data.r === undefined || data.c === undefined) return;
+        //Ignora as paredes e encontra o primeiro objeto (chão/terminal) com coordenadas
+        const hitTile = intersects.find(i => i.object.userData && i.object.userData.r !== undefined && i.object.userData.c !== undefined);
 
+        if (hitTile) {
+            const data = hitTile.object.userData;
             const type = currentLevelData.map[data.r][data.c];
 
             if (type === 1) return;
@@ -1906,7 +1963,7 @@ window.addEventListener('mousedown', (e) => {
 
             // interagir com terminais
             if (type === 2) {
-                //necessário estar adjecente
+                //necessário estar adjacente
                 const dist = Math.abs(player.r - data.r) + Math.abs(player.c - data.c);
                 if (dist <= 1) {
                     const tData = currentLevelData.terminals.find(t => t.r === data.r && t.c === data.c);
@@ -2000,6 +2057,13 @@ window.addEventListener('mousedown', (e) => {
                     const inCombat = enemies.some(en => en.data.active && en.data.isAlerted);
                     if (inCombat) {
                         pushToLog("ACCESS DENIED: COMBAT DETECTED. PURGE ICE FIRST.", true);
+                        return;
+                    }
+
+                    const nextLevel = currentLevelIndex + 1;
+                    if (!LEVEL_DATA[nextLevel]) {
+                        // Se for o último nível, toca o Bad Ending
+                        playBadEndingCutscene();
                         return;
                     }
 
@@ -2753,6 +2817,105 @@ document.getElementById('btn-end-turn').onclick = () => {
     }
 };
 
+function playEndingCutscene() {
+    // Esconde o jogo e mostra o ecrã final
+    renderer.domElement.style.display = 'none';
+    switchScreen('ending-screen');
+
+    const endingTextElement = document.getElementById('ending-text');
+
+    // O Guião da Fuga / Intuição
+    const script = [
+        "EXTRACTION POINT REACHED.",
+        "HANDLER: Wait, Nyx. What are you doing?\nYou didn't get the data!",
+        "NYX: It's a trap.",
+        "NYX: The ICE was too predictable. The physical patrols left deliberate blind spots.",
+        "NYX: They wanted me to get this far. They were watching.",
+        "HANDLER: Are you crazy? We are so close! Turn back!",
+        "NYX: I'm scrubbing my tracks and getting out of here.\nStay off the grid, they might trace you too.",
+        "CONNECTION TERMINATED.",
+        "CYBERPUNK ><#>\n\nSURVIVAL ENDING."
+    ];
+
+    let currentLine = 0;
+
+    function showNextLine() {
+        if (currentLine < script.length) {
+            endingTextElement.innerText = script[currentLine];
+
+            setTimeout(() => {
+                endingTextElement.classList.add('visible');
+            }, 100);
+
+            // Dá um pouco mais de tempo nas falas maiores para o jogador conseguir ler
+            const readTime = (currentLine === 3 || currentLine === 6) ? 4500 : 3500;
+
+            setTimeout(() => {
+                endingTextElement.classList.remove('visible');
+                currentLine++;
+                setTimeout(showNextLine, 1000);
+            }, readTime);
+
+        } else {
+            setTimeout(() => {
+                location.reload();
+            }, 4000);
+        }
+    }
+
+    setTimeout(showNextLine, 1000);
+}
+
+function playBadEndingCutscene() {
+    // Esconde o jogo e mostra o ecrã negro
+    renderer.domElement.style.display = 'none';
+    switchScreen('ending-screen');
+
+    const endingTextElement = document.getElementById('ending-text');
+
+    // O Guião da Traição
+    const script = [
+        "SYSTEM OVERRIDE SUCCESSFUL.\nACCESSING MAINFRAME...",
+        "MILITECH SYSADMIN: Trace complete. Target isolated in the Control Tower.",
+        "MILITECH SYSADMIN: Security stress-test concluded. Vulnerabilities logged.",
+        "MILITECH SYSADMIN: Thank you for your participation, Runner.",
+        "WARNING: UPLOAD BLOCKED. FIREWALL ENGAGED.",
+        "WARNING: DOOR BREACH DETECTED IN PHYSICAL SPACE.",
+        "GUARD: Target acquired! Firing!",
+        "GUNSHOTS DETECTED.\nVITALS CRITICAL...",
+        "FLATLINE.\nCONNECTION TERMINATED.",
+        "CYBERPUNK ><#>\n\nBAD ENDING."
+    ];
+
+    let currentLine = 0;
+
+    function showNextLine() {
+        if (currentLine < script.length) {
+            endingTextElement.innerText = script[currentLine];
+
+            setTimeout(() => {
+                endingTextElement.classList.add('visible');
+            }, 100);
+
+            // Se for o som dos tiros ou o Flatline, passa mais rápido (2 segundos) para dar urgência, senão 3.5s
+            const readTime = (currentLine === 7 || currentLine === 8) ? 2000 : 3500;
+
+            setTimeout(() => {
+                endingTextElement.classList.remove('visible');
+                currentLine++;
+                setTimeout(showNextLine, 1000);
+            }, readTime);
+
+        } else {
+            setTimeout(() => {
+                location.reload();
+            }, 4000);
+        }
+    }
+
+    setTimeout(showNextLine, 1000);
+}
+
 /////////////////////////////////////////
 // Responsável estritamente pelo tweening
 /////////////////////////////////////////
@@ -2849,6 +3012,11 @@ function animate() {
                     if (isActiveTerminal) {
                         finalTargetOp = 1.0;
                     }
+
+                    else if (m === hoveredWallMesh) {
+                        finalTargetOp = 0.2;
+                    }
+
                     //tiles
                     else if (m.userData.isHitbox) {
                         const isExit = currentLevelData.exit && currentLevelData.exit.r === child.userData.r && currentLevelData.exit.c === child.userData.c;
@@ -2874,10 +3042,22 @@ function animate() {
 
                     //aproxima a opacidade atual da opacidade desejada em 10% por frame
                     if (mat.opacity !== undefined) {
-                        mat.opacity += (finalTargetOp - mat.opacity) * 0.1;
+                        // Define uma velocidade dinâmica
+                        let fadeSpeed = 0.1;
+                        if (m.userData.isWall) {
+                            if (finalTargetOp > mat.opacity) {
+                                fadeSpeed = 0.04; // Fade In (voltar a sólido) mais lento e suave
+                            } else {
+                                fadeSpeed = 0.15; // Fade Out (ficar transparente) muito mais rápido
+                            }
+                        }
+
+                        mat.opacity += (finalTargetOp - mat.opacity) * fadeSpeed;
+                        
+                        // APAGÁMOS AQUI O BLOCO TODO DO 'depthWrite' QUE CAUSAVA O STUTTER!
                     }
 
-                    //ajusta o brilho baseado na opacidade
+                    // Ajusta o brilho baseado na opacidade
                     if (mat.emissive && !m.isLine) {
                         const maxGlow = (child.userData && child.userData.type === 'camera') ? 1.0 : 0.5;
                         mat.emissiveIntensity = mat.opacity * maxGlow;

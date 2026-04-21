@@ -665,13 +665,43 @@ Log dinamico
 
 /* animação para a Caveira do death screen pulsar */
 @keyframes skullPulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 0.7; }
-    90% { opacity: 0.5; }
-    95% { opacity: 0.10; } 
-    100% { opacity: 0.5; }
+    0% { opacity: 0.7; }
+    50% { opacity: 0.9; }
+    90% { opacity: 0.7; }
+    95% { opacity: 1.0; } 
+    100% { opacity: 0.7; }
 }
 
 .glitch-skull {
     animation: skullPulse 3s infinite normal;
+}
+
+/* =========================================
+   ECRÃ FINAL E CRÉDITOS
+   ========================================= */
+#ending-screen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #020202; 
+}
+
+#ending-screen.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+#ending-text {
+    color: #00ffcc; 
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 28px;
+    text-align: center;
+    text-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+    white-space: pre-line;
+    opacity: 0;
+    transition: opacity 1s ease-in-out; 
+}
+
+#ending-text.visible {
+    opacity: 1;
 }
