@@ -2,8 +2,9 @@ body {
     margin: 0;
     background: #010103;
     color: #00ffcc;
-    font-family: 'Courier New', monospace; 
-    overflow: hidden; /* Previne scrollbars */
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    /* Previne scrollbars */
 }
 
 /* 
@@ -29,8 +30,8 @@ Ecrãs e estados
 }
 
 /* Class utilizada para distinguir elementos de netspace de meatspace */
-.net-only { 
-    display: none; 
+.net-only {
+    display: none;
 }
 
 /* 
@@ -135,6 +136,13 @@ Botões
     color: #ff0055;
 }
 
+
+#btn-back-menu:hover {
+    background: #ff0055;
+    color: #000;
+    box-shadow: 0 0 15px #ff0055;
+}
+
 /* 
 Sequencia introdutória 
 */
@@ -158,12 +166,18 @@ Sequencia introdutória
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 1.5s ease-in-out; /* Smoothly fades map territories in and out */
+    transition: opacity 1.5s ease-in-out;
+    /* Smoothly fades map territories in and out */
     will-change: opacity;
 }
 
-#map-base.visible { opacity: 0.3; }
-.map-overlay.visible { opacity: 0.8; }
+#map-base.visible {
+    opacity: 0.3;
+}
+
+.map-overlay.visible {
+    opacity: 0.8;
+}
 
 /* caixa de texto centrada */
 .dialogue-box {
@@ -205,8 +219,10 @@ diálogos entre personagens
 .dialogue-container-split {
     display: flex;
     justify-content: space-between;
+    align-items: flex-end;
     width: 90%;
     max-width: 1000px;
+    height: 80vh;
     gap: 40px;
 }
 
@@ -215,7 +231,13 @@ diálogos entre personagens
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
+    height: 100%;
     transition: opacity 0.3s;
+
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
 }
 
 /* Escurece a personagem que não está a falar */
@@ -224,11 +246,10 @@ diálogos entre personagens
     filter: grayscale(80%);
 }
 
-/* Necessário ajustar mais tarde de modo a suportar o artwork dos portraits*/
-.portrait { 
+.portrait {
     width: 150px;
     height: 150px;
-    background: #111;
+    background: rgba(17, 17, 17, 0.85);
     border: 2px solid #00ffcc;
     margin-bottom: -15px;
     z-index: 2;
@@ -249,7 +270,8 @@ diálogos entre personagens
 
 .dialogue-box-split {
     width: 100%;
-    background: rgba(0, 10, 15, 0.95);
+    background: rgba(0, 10, 15, 0.75);
+    backdrop-filter: blur(5px);
     border: 2px solid #00ffcc;
     padding: 30px 20px 20px 20px;
     min-height: 120px;
@@ -269,8 +291,15 @@ diálogos entre personagens
 }
 
 @keyframes blink {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
+
+    0%,
+    100% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
 
 /* 
@@ -282,7 +311,8 @@ UI do jogo
     width: 100%;
     height: 100%;
     background: transparent;
-    pointer-events: none; /* permite que os clicks passem pelo ecrã de UI */
+    pointer-events: none;
+    /* permite que os clicks passem pelo ecrã de UI */
     z-index: 5;
 }
 
@@ -328,17 +358,18 @@ Overlay do tutorial
 */
 
 .tutorial-overlay {
-    display: none; 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(0,0,0,0.7); 
-    z-index: 50; 
-    justify-content: center; 
-    align-items: center; 
-    pointer-events: all; /* bloqueia movimento durante o tutorial */
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 50;
+    justify-content: center;
+    align-items: center;
+    pointer-events: all;
+    /* bloqueia movimento durante o tutorial */
 }
 
 .tutorial-box {
@@ -364,7 +395,7 @@ Overlay do tutorial
     height: 300px;
 }
 
-.tutorial-media img, 
+.tutorial-media img,
 .tutorial-media video {
     max-width: 100%;
     max-height: 300px;
@@ -397,6 +428,7 @@ Overlay do tutorial
 #btn-next-tutorial {
     margin-left: auto;
 }
+
 /* 
 Stack dos diferentes andares da architecture 
 */
@@ -420,21 +452,26 @@ Stack dos diferentes andares da architecture
     height: 70px;
     background: rgba(0, 255, 204, 0.2);
     border: 2px solid #00ffcc;
-    transform: rotateX(60deg) rotateZ(-45deg); /* perspectiva isométrica */
+    transform: rotateX(60deg) rotateZ(-45deg);
+    /* perspectiva isométrica */
     transition: all 0.3s ease;
     position: relative;
-    margin-top: -45px; /* Overlap */
+    margin-top: -45px;
+    /* Overlap */
     box-shadow: -4px 4px 0px rgba(0, 255, 204, 0.1);
 }
 
-.stack-layer:first-child { margin-top: 0; }
+.stack-layer:first-child {
+    margin-top: 0;
+}
 
 /* Andar atual */
 .stack-layer.active {
     background: rgba(0, 255, 204, 0.7);
     border-color: #fff;
     box-shadow: -4px 4px 0px rgba(0, 255, 204, 0.3), 0 0 20px #00ffcc;
-    transform: rotateX(60deg) rotateZ(-45deg) translate(-10px, -10px); /* move-o para a esquerda do resto do stack */
+    transform: rotateX(60deg) rotateZ(-45deg) translate(-10px, -10px);
+    /* move-o para a esquerda do resto do stack */
 }
 
 /* Andar com um inimigo alerta */
@@ -469,12 +506,23 @@ Stack dos diferentes andares da architecture
 
 /* Sonar Scan */
 @keyframes scan-pulse {
-    0% { box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 0px #ff0055; }
-    50% { box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 20px #ff0055; background: rgba(255, 0, 85, 0.4); }
-    100% { box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 0px #ff0055; }
+    0% {
+        box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 0px #ff0055;
+    }
+
+    50% {
+        box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 20px #ff0055;
+        background: rgba(255, 0, 85, 0.4);
+    }
+
+    100% {
+        box-shadow: -4px 4px 0px rgba(255, 0, 85, 0.4), 0 0 0px #ff0055;
+    }
 }
 
-.scanning-active { animation: scan-pulse 1s infinite; }
+.scanning-active {
+    animation: scan-pulse 1s infinite;
+}
 
 /* 
 Log dinamico 
@@ -488,12 +536,15 @@ Log dinamico
     display: flex;
     flex-direction: column;
     pointer-events: all;
-    cursor: pointer; /* altera o cursor para indicar que pode ser clicked */
+    cursor: pointer;
+    /* altera o cursor para indicar que pode ser clicked */
     z-index: 20;
     transition: transform 0.2s;
 }
 
-.log-wrapper:hover { transform: scale(1.02); }
+.log-wrapper:hover {
+    transform: scale(1.02);
+}
 
 /* O container para o histórico de mensagens */
 .log-history {
@@ -501,15 +552,21 @@ Log dinamico
     flex-direction: column;
     gap: 2px;
     margin-bottom: 5px;
-    max-height: 0; /* escondido até ser expandido */
+    max-height: 0;
+    /* escondido até ser expandido */
     overflow-y: auto;
     transition: max-height 0.3s ease;
     background: rgba(0, 0, 0, 0.9);
     border: 1px solid transparent;
 }
 
-.log-history::-webkit-scrollbar { width: 5px; }
-.log-history::-webkit-scrollbar-thumb { background: #00ffcc; }
+.log-history::-webkit-scrollbar {
+    width: 5px;
+}
+
+.log-history::-webkit-scrollbar-thumb {
+    background: #00ffcc;
+}
 
 /* expandido após um clique (através de js)*/
 .log-wrapper.expanded .log-history {
@@ -524,7 +581,7 @@ Log dinamico
     font-size: 0.9rem;
     padding: 4px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    font-family: inherit; 
+    font-family: inherit;
 }
 
 .log-item.netrun {
@@ -579,14 +636,12 @@ Log dinamico
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; 
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(255, 0, 85, 0.15),
-        rgba(255, 0, 85, 0.15) 2px,
-        transparent 2px,
-        transparent 4px
-    );
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg,
+            rgba(255, 0, 85, 0.15),
+            rgba(255, 0, 85, 0.15) 2px,
+            transparent 2px,
+            transparent 4px);
     box-shadow: inset 0 0 100px rgba(255, 0, 85, 0.5);
     opacity: 0;
     z-index: 9999;
@@ -600,13 +655,11 @@ Log dinamico
 
 /*altero o efeito para Azul para o reiniciar em meatspace */
 #damage-overlay.simulation {
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(0, 200, 255, 0.15),
-        rgba(0, 200, 255, 0.15) 2px,
-        transparent 2px,
-        transparent 4px
-    );
+    background: repeating-linear-gradient(0deg,
+            rgba(0, 200, 255, 0.15),
+            rgba(0, 200, 255, 0.15) 2px,
+            transparent 2px,
+            transparent 4px);
     box-shadow: inset 0 0 100px rgba(0, 200, 255, 0.5);
 }
 
@@ -618,13 +671,11 @@ Log dinamico
     height: 100vh;
     background-color: #050000;
     /* Scanlines vermelhas de fundo */
-    background-image: repeating-linear-gradient(
-        0deg, 
-        rgba(255, 0, 85, 0.05), 
-        rgba(255, 0, 85, 0.05) 2px, 
-        transparent 2px, 
-        transparent 4px
-    );
+    background-image: repeating-linear-gradient(0deg,
+            rgba(255, 0, 85, 0.05),
+            rgba(255, 0, 85, 0.05) 2px,
+            transparent 2px,
+            transparent 4px);
     position: relative;
     overflow: hidden;
 }
@@ -635,13 +686,13 @@ Log dinamico
     left: 50%;
     transform: translate(-50%, -50%);
     color: rgba(255, 0, 85, 0.2);
-    
+
     font-family: 'Courier New', Courier, monospace;
-    white-space: pre; 
-    
+    white-space: pre;
+
     font-size: 1.5vw;
     text-align: center;
-    pointer-events: none; 
+    pointer-events: none;
     margin: 0;
     z-index: 1;
     line-height: 1.1;
@@ -649,7 +700,7 @@ Log dinamico
 
 #bsod-text {
     position: relative;
-    z-index: 2; 
+    z-index: 2;
     color: #ff0055;
     font-family: monospace;
     font-size: 24px;
@@ -665,24 +716,36 @@ Log dinamico
 
 /* animação para a Caveira do death screen pulsar */
 @keyframes skullPulse {
-    0% { opacity: 0.7; }
-    50% { opacity: 0.9; }
-    90% { opacity: 0.7; }
-    95% { opacity: 1.0; } 
-    100% { opacity: 0.7; }
+    0% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 0.9;
+    }
+
+    90% {
+        opacity: 0.7;
+    }
+
+    95% {
+        opacity: 1.0;
+    }
+
+    100% {
+        opacity: 0.7;
+    }
 }
 
 .glitch-skull {
     animation: skullPulse 3s infinite normal;
 }
 
-/* =========================================
-   ECRÃ FINAL E CRÉDITOS
-   ========================================= */
+/* ecrã final e créditos */
 #ending-screen {
     width: 100vw;
     height: 100vh;
-    background-color: #020202; 
+    background-color: #020202;
 }
 
 #ending-screen.active {
@@ -692,14 +755,14 @@ Log dinamico
 }
 
 #ending-text {
-    color: #00ffcc; 
+    color: #00ffcc;
     font-family: 'Courier New', Courier, monospace;
     font-size: 28px;
     text-align: center;
     text-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
     white-space: pre-line;
     opacity: 0;
-    transition: opacity 1s ease-in-out; 
+    transition: opacity 1s ease-in-out;
 }
 
 #ending-text.visible {
