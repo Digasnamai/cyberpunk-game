@@ -311,7 +311,7 @@ export const LEVEL_DATA = {
         platforms: [], drones: []
     },
     3: {
-        spawn: { r: 5, c: 0 },
+        spawn: { r: 4, c: 0 },
 
         tutorial: [
             {

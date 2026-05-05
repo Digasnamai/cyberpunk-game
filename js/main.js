@@ -6,10 +6,10 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { LEVEL_DATA } from './data/levels.js';
 import { introSequence, mission1Dialogue, mission2Dialogue, mission3Dialogue, mission4Dialogue, mission5Dialogue, mission6Dialogue } from './data/dialogues.js';
 
-////////////////////////////////////////////////////
-//inicialização do Three.js, load dos modelos (.glb) 
-//e variáveis globais do estado do jogo.
-////////////////////////////////////////////////////
+////////////////////////////////////
+//inicialização do Three.js, modelos
+//e variáveis globais do jogo
+////////////////////////////////////
 
 let currentMode = 'PHYSICAL'; //define se estamos no modo 'PHYSICAL' (meatspace) ou 'NETRUN' (netspace)
 
@@ -49,14 +49,22 @@ loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
     if (loadText) loadText.innerText = `LOADING ASSETS... ${Math.floor(progress)}%`;
 };
 
-//quando acabar de carregar, esconde o loading screen e mostra o main menu
+//quando acabar de carregar, esconde a progress bar e aparece um start button
 loadingManager.onLoad = function () {
     console.log('All assets loaded successfully!');
+    
+    const loadText = document.getElementById('loading-text');
+    const loadBar = document.getElementById('loading-bar');
+    const startBtn = document.getElementById('btn-start-game');
+    
+    if (loadText) loadText.innerText = "SYSTEM READY";
+    if (loadBar) loadBar.style.display = 'none'; 
+    if (startBtn) startBtn.style.display = 'inline-block';
+};
 
-    //pequeno atraso para o jogador conseguir ver a barra chegar aos 100%
-    setTimeout(() => {
-        switchScreen('main-menu');
-    }, 500);
+document.getElementById('btn-start-game').onclick = () => {
+    switchScreen('main-menu');
+    switchBGM(bgm.intro); 
 };
 
 const loader = new GLTFLoader(loadingManager);
@@ -381,6 +389,7 @@ function showCharacterDialogue(dialogueArray, onCompleteCallback) {
 
 //cemeça a sequencia introdutória, seguida pelo diálogo do 1º nível e finalemnte pelo nível
 document.getElementById('btn-new-game').onclick = () => {
+    switchBGM(bgm.tutorial);
     showIntro(introSequence, () => {
         showCharacterDialogue(mission1Dialogue, () => {
             startLevel(0);
@@ -398,6 +407,13 @@ document.getElementById('btn-back-menu').onclick = () => switchScreen('main-menu
 document.querySelectorAll('.map-node').forEach(node => {
     node.onclick = (e) => {
         const level = parseInt(e.target.getAttribute('data-level'));
+
+        if (level === 0) switchBGM(bgm.tutorial);
+        else if (level === 1) switchBGM(bgm.level1);
+        else if (level === 2) switchBGM(bgm.level2);
+        else if (level === 3) switchBGM(bgm.level3);
+        //else if (level === 4) switchBGM(bgm.level4); 
+        else if (level === 5) switchBGM(bgm.level5);
 
         if (level === 0) {
             showCharacterDialogue(mission1Dialogue, () => { startLevel(level); });
@@ -522,6 +538,101 @@ camera.position.set(10, 10, 10);
 camera.lookAt(0, 0, 0);
 let cameraShakeTime = 0;
 let cameraShakeIntensity = 0;
+
+///////
+//audio
+///////
+
+const audioListener = new THREE.AudioListener();
+camera.add(audioListener);
+
+const audioLoader = new THREE.AudioLoader(loadingManager);
+
+const sfx = {
+    sword: new THREE.Audio(audioListener),
+    harpoon: new THREE.Audio(audioListener)
+};
+
+audioLoader.load('sound/Sword.mp3', function (buffer) {
+    sfx.sword.setBuffer(buffer);
+    sfx.sword.setVolume(0.5);
+});
+
+audioLoader.load('sound/Harpoon.mp3', function (buffer) {
+    sfx.harpoon.setBuffer(buffer);
+    sfx.harpoon.setVolume(0.5);
+});
+
+const bgm = {
+    intro: new THREE.Audio(audioListener),
+    level1: new THREE.Audio(audioListener),
+    level2: new THREE.Audio(audioListener),
+    level3: new THREE.Audio(audioListener),
+    level5: new THREE.Audio(audioListener),
+    tutorial: new THREE.Audio(audioListener),
+    goodEnding: new THREE.Audio(audioListener),
+    badEnding: new THREE.Audio(audioListener)
+};
+
+const bgmFiles = {
+    intro: 'sound/Intro.mp3',
+    level1: 'sound/level1.mp3',
+    level2: 'sound/level2.mp3',
+    level3: 'sound/level3.mp3',
+    level5: 'sound/level5.mp3',
+    tutorial: 'sound/tutorial.mp3',
+    goodEnding: 'sound/GoodEnding.mp3',
+    badEnding: 'sound/BadEnding.mp3'
+};
+
+for (const [key, file] of Object.entries(bgmFiles)) {
+    audioLoader.load(file, function (buffer) {
+        bgm[key].setBuffer(buffer);
+        bgm[key].setLoop(true);
+        bgm[key].setVolume(0);  
+    });
+}
+
+let currentBGM = null;
+const MAX_BGM_VOL = 1.2;
+
+function fadeAudio(audio, targetVolume, duration) {
+    if (!audio) return;
+
+    if (!audio.isPlaying && targetVolume > 0) {
+        audio.setVolume(0);
+        audio.play();
+    }
+
+    const stepTime = 50; //atualiza o volume a cada 50ms
+    const steps = (duration * 1000) / stepTime;
+    const volumeStep = (targetVolume - audio.getVolume()) / steps;
+
+    const fadeInterval = setInterval(() => {
+        let newVol = audio.getVolume() + volumeStep;
+
+        //se atingiu ou ultrapassou o volume desejado
+        if ((volumeStep > 0 && newVol >= targetVolume) || (volumeStep < 0 && newVol <= targetVolume)) {
+            audio.setVolume(targetVolume);
+            clearInterval(fadeInterval);
+            if (targetVolume === 0) audio.pause();
+        } else {
+            audio.setVolume(newVol);
+        }
+    }, stepTime);
+}
+
+function switchBGM(newBGM) {
+    if (currentBGM === newBGM) return;
+
+    //fade out na música atual
+    if (currentBGM) fadeAudio(currentBGM, 0, 2.0);
+
+    //fade in na nova música
+    if (newBGM) fadeAudio(newBGM, MAX_BGM_VOL, 2.0);
+
+    currentBGM = newBGM;
+}
 
 //definições da luz
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -676,17 +787,21 @@ function executePathMovement(path) {
                     renderer.domElement.style.display = 'none';
 
                     if (nextLevel === 1) {
+                        switchBGM(bgm.level1);
                         showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 2) {
+                        switchBGM(bgm.level2);
                         showCharacterDialogue(mission3Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 3) {
+                        switchBGM(bgm.level3);
                         showCharacterDialogue(mission4Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 4) {
                         showCharacterDialogue(mission5Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 5) {
+                        switchBGM(bgm.level5);
                         showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel); });
                     } else {
-                        //se for um nível sem diálogo
+                        //se for um nível sem diálogo (já não é preciso mas vou deixar)
                         startLevel(nextLevel);
                     }
 
@@ -1047,7 +1162,7 @@ function buildPhysicalWorld() {
 
                     physDoorLeft = new THREE.Mesh(doorGeo, doorMat);
                     physDoorLeft.position.set(-0.25, 0, 0);
-                    physDoorLeft.userData.isWall = true; 
+                    physDoorLeft.userData.isWall = true;
 
                     physDoorRight = new THREE.Mesh(doorGeo, doorMat.clone());
                     physDoorRight.position.set(0.25, 0, 0);
@@ -1329,7 +1444,7 @@ function buildPhysicalWorld() {
         if (idleClip) {
             const action = netPlayerMixer.clipAction(idleClip);
             action.setLoop(THREE.LoopRepeat);
-            action.play(); 
+            action.play();
         }
 
         playerGroup.add(netPlayerModel);
@@ -2056,7 +2171,7 @@ function takeDamage(amt) {
     //verifica se o jogador tem scales
     if (player.statuses.scalesBarrier > 0) {
         player.statuses.scalesBarrier--; //consome a carga de scales independentemente de funcionar ou falhar
-        
+
         //30% de probabilidade de o escudo falhar
         if (Math.random() < 0.30) {
             pushToLog(`SCALES.EXE FAILED TO BLOCK DAMAGE! (${player.statuses.scalesBarrier} SCALES LEFT)`, true);
@@ -2928,6 +3043,9 @@ document.getElementById('btn-harpoon').onclick = () => {
     //apply Damage
     target.data.hp -= 3;
 
+    if (sfx.harpoon.isPlaying) sfx.harpoon.stop(); //pára o som se o jogador tiver usado muito rápido
+    sfx.harpoon.play();
+
     if (models.harpoonGltf) {
         if (harpoonTimeout) {
             clearTimeout(harpoonTimeout);
@@ -3038,6 +3156,9 @@ document.getElementById('btn-swordfish').onclick = () => {
     player.targetRot = Math.atan2(target.data.x - player.c, target.data.z - player.r);
 
     target.data.hp -= 5;
+
+    if (sfx.sword.isPlaying) sfx.sword.stop(); //pára o som se o jogador tiver usado muito rápido
+    sfx.sword.play();
 
     if (models.swordfishGltf) {
 
@@ -3166,6 +3287,7 @@ document.getElementById('btn-end-turn').onclick = () => {
 };
 
 function playEndingCutscene() {
+    switchBGM(bgm.goodEnding);
     renderer.domElement.style.display = 'none';
 
     const script = [
@@ -3185,6 +3307,7 @@ function playEndingCutscene() {
 }
 
 function playBadEndingCutscene() {
+    switchBGM(bgm.badEnding);
     renderer.domElement.style.display = 'none';
 
     const script = [
