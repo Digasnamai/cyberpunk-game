@@ -51,7 +51,7 @@ export const LEVEL_DATA = {
         // O Terminal ensina a descer 1 andar e a lutar contra 1 monstro antes de abrir a porta
         terminals: [
             {
-                id: "T_TUTORIAL", r: 3, c: 8, action: "unlock_door", targetId: "DOOR_TUTORIAL", floors: 2,
+                id: "T_TUTORIAL", r: 3, c: 8, action: "unlock_door", targetId: "DOOR_TUTORIAL", floors: 2, dir: 'left',
                 // GATILHOS EXCLUSIVOS DESTE NETRUN
                 triggers: [
                     {
@@ -194,9 +194,9 @@ export const LEVEL_DATA = {
         //"targetId" é a referência para a porta, camara ou objeto onde atuar
         //"floors" determina quantos n´íveis tem a architecture
         terminals: [
-            { id: "T1", r: 2, c: 2, action: "unlock_door", targetId: "D1", floors: 2 },
-            { id: "T2", r: 1, c: 14, action: "unlock_door", targetId: "D2", floors: 3 },
-            { id: "T3", r: 8, c: 5, action: "rotate_arm", targetId: "RoboticArm", floors: 3 }
+            { id: "T1", r: 2, c: 2, action: "unlock_door", targetId: "D1", floors: 2 ,dir: 'left'},
+            { id: "T2", r: 1, c: 14, action: "unlock_door", targetId: "D2", floors: 3 ,dir: 'left'},
+            { id: "T3", r: 8, c: 5, action: "rotate_arm", targetId: "RoboticArm", floors: 3 ,dir: 'up'}
         ],
 
         //bloqueiam movimento até serem desbloquadas por um terminal
@@ -292,11 +292,11 @@ export const LEVEL_DATA = {
         ],
 
         terminals: [
-            { id: "T1", r: 4, c: 5, action: "unlock_door", targetId: "D1", floors: 2 },
+            { id: "T1", r: 4, c: 5, action: "unlock_door", targetId: "D1", floors: 2 ,dir: 'down'},
             //este terminal tem um layer bloqueado requerindo ao utilizador encontrar o Datapad para progredir
-            { id: "T2", r: 4, c: 19, action: "unlock_door", targetId: "D2", floors: 4, lockedWith: "PASS_T2" },
-            { id: "T3", r: 0, c: 6, action: "disable_camera", targetId: "C3", floors: 2 },
-            { id: "T4", r: 8, c: 13, action: "disable_camera", targetId: "C2", floors: 3 },
+            { id: "T2", r: 4, c: 19, action: "unlock_door", targetId: "D2", floors: 4, lockedWith: "PASS_T2",dir: 'left' },
+            { id: "T3", r: 0, c: 6, action: "disable_camera", targetId: "C3", floors: 2 ,dir: 'down'},
+            { id: "T4", r: 8, c: 13, action: "disable_camera", targetId: "C2", floors: 3 ,dir: 'right'},
 
         ],
         //Datapad necessário para desbloquear um layer num terminal
@@ -474,10 +474,10 @@ export const LEVEL_DATA = {
         ],
 
         terminals: [
-            { id: "T_TR_1", r: 3, c: 17, action: "disable_camera", targetId: "C_MID", floors: 2 },
-            { id: "T_TR_2", r: 6, c: 16, action: "unlock_door", targetId: "D_TOP", floors: 3 },
-            { id: "T_BR", r: 16, c: 17, action: "disable_camera", targetId: "C_BOT", floors: 3 },
-            { id: "T_BL", r: 18, c: 4, action: "unlock_door", targetId: "D_BOT", floors: 3, lockedWith: "KEY_OMEGA" }
+            { id: "T_TR_1", r: 3, c: 17, action: "disable_camera", targetId: "C_MID", floors: 2, dir: 'left' },
+            { id: "T_TR_2", r: 6, c: 16, action: "unlock_door", targetId: "D_TOP", floors: 3 ,dir: 'down'},
+            { id: "T_BR", r: 16, c: 17, action: "disable_camera", targetId: "C_BOT", floors: 3 ,dir: 'left'},
+            { id: "T_BL", r: 18, c: 4, action: "unlock_door", targetId: "D_BOT", floors: 3, lockedWith: "KEY_OMEGA" ,dir: 'right'}
         ],
 
         exit: { r: 28, c: 1 },
@@ -757,7 +757,7 @@ export const LEVEL_DATA = {
         passwords: [],
 
         terminals: [
-            { id: "FINAL", r: 3, c: 2, action: "ending", targetId: "D_HACK", floors: 10 },
+            { id: "FINAL", r: 3, c: 2, action: "ending", targetId: "D_HACK", floors: 10, dir: 'right'},
         ],
 
         exit: { r: 3, c: 17 }

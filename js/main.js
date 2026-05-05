@@ -823,7 +823,7 @@ function executePathMovement(path) {
                     } else if (nextLevel === 3) {
                         showCharacterDialogue(mission4Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 4) {
-                        showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel+1); });
+                        showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel + 1); });
                     } else {
                         //se for um nível sem diálogo (já não é preciso mas vou deixar)
                         startLevel(nextLevel);
@@ -1127,6 +1127,16 @@ function buildPhysicalWorld() {
                     terminal.position.set(c, tileY + 0.4, r);
                     terminal.userData = terminalUserData;
                 }
+
+                // Aplica a rotação baseada na propriedade 'dir'
+                let termRot = 0;
+                if (tData && tData.dir) {
+                    if (tData.dir === 'up') termRot = Math.PI;
+                    else if (tData.dir === 'down') termRot = 0;
+                    else if (tData.dir === 'left') termRot = -Math.PI / 2;
+                    else if (tData.dir === 'right') termRot = Math.PI / 2;
+                }
+                terminal.rotation.y = termRot;
 
                 terminal.userData = terminalUserData;
                 physGridGroup.add(terminal);
@@ -1709,6 +1719,13 @@ function checkPhysicalDetection() {
     const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
     if (inVision) {
         pushToLog("SIMULATION FAILED. CAUGHT. RECALCULATING...", false);
+        
+        const damageSounds = [sfx.damageTaken1, sfx.damageTaken2, sfx.damageTaken3];
+        //escolhe um dos sons aleatóriamente
+        const randomHitSound = damageSounds[Math.floor(Math.random() * damageSounds.length)];
+
+        if (randomHitSound.isPlaying) randomHitSound.stop();
+        randomHitSound.play();
 
         const damageOverlay = document.getElementById('damage-overlay');
         if (damageOverlay) {
@@ -1939,6 +1956,15 @@ function generateMirroredNetrun(terminalData) {
             term.renderOrder = 1000;
             term.userData = termUserData;
         }
+
+        let termRot = 0;
+        if (terminalData.dir) {
+            if (terminalData.dir === 'up') termRot = Math.PI;
+            else if (terminalData.dir === 'down') termRot = 0;
+            else if (terminalData.dir === 'left') termRot = -Math.PI / 2;
+            else if (terminalData.dir === 'right') termRot = Math.PI / 2;
+        }
+        term.rotation.y = termRot;
 
         term.userData = termUserData;
         group.add(term);
@@ -2805,6 +2831,9 @@ function processNetrunTurn() {
 
                 //lógica de efeitos de ataque por classe de ICE
                 if (en.data.type === 'Asp') {
+                    //remove a penalidadde anterior
+                    player.statuses.disabledPrograms = { swordfish: 0, harpoon: 0, scales: 0, swim: 0 };
+
                     //escolhe uma das habilidades de batalha para desativar
                     const targetable = ['swordfish', 'harpoon', 'scales', 'swim'];
                     const hitProg = targetable[Math.floor(Math.random() * targetable.length)];
