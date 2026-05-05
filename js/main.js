@@ -52,19 +52,19 @@ loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
 //quando acabar de carregar, esconde a progress bar e aparece um start button
 loadingManager.onLoad = function () {
     console.log('All assets loaded successfully!');
-    
+
     const loadText = document.getElementById('loading-text');
     const loadBar = document.getElementById('loading-bar');
     const startBtn = document.getElementById('btn-start-game');
-    
+
     if (loadText) loadText.innerText = "SYSTEM READY";
-    if (loadBar) loadBar.style.display = 'none'; 
+    if (loadBar) loadBar.style.display = 'none';
     if (startBtn) startBtn.style.display = 'inline-block';
 };
 
 document.getElementById('btn-start-game').onclick = () => {
     switchScreen('main-menu');
-    switchBGM(bgm.intro); 
+    switchBGM(bgm.intro);
 };
 
 const loader = new GLTFLoader(loadingManager);
@@ -447,6 +447,12 @@ function startLevel(levelNum) {
     currentLevelIndex = levelNum;
     currentLevelData = LEVEL_DATA[levelNum];
 
+    if (currentLevelIndex === 0) switchBGM(bgm.tutorial);
+    else if (currentLevelIndex === 1) switchBGM(bgm.level1);
+    else if (currentLevelIndex === 2) switchBGM(bgm.level2);
+    else if (currentLevelIndex === 3) switchBGM(bgm.level3);
+    else if (currentLevelIndex === 5) switchBGM(bgm.level5);
+
     //reinicia os atributos do jogador, sendo o local inicial consoante a data do nível
     player.r = currentLevelData.spawn.r;
     player.c = currentLevelData.spawn.c;
@@ -550,8 +556,32 @@ const audioLoader = new THREE.AudioLoader(loadingManager);
 
 const sfx = {
     sword: new THREE.Audio(audioListener),
-    harpoon: new THREE.Audio(audioListener)
+    harpoon: new THREE.Audio(audioListener),
+    damageTaken1: new THREE.Audio(audioListener),
+    damageTaken2: new THREE.Audio(audioListener),
+    damageTaken3: new THREE.Audio(audioListener),
+    death: new THREE.Audio(audioListener)
 };
+
+audioLoader.load('sound/death.mp3', function (buffer) {
+    sfx.death.setBuffer(buffer);
+    sfx.death.setVolume(1.0);
+});
+
+audioLoader.load('sound/damageTaken1.mp3', function (buffer) {
+    sfx.damageTaken1.setBuffer(buffer);
+    sfx.damageTaken1.setVolume(0.5);
+});
+
+audioLoader.load('sound/damageTaken2.mp3', function (buffer) {
+    sfx.damageTaken2.setBuffer(buffer);
+    sfx.damageTaken2.setVolume(0.5);
+});
+
+audioLoader.load('sound/damageTaken3.mp3', function (buffer) {
+    sfx.damageTaken3.setBuffer(buffer);
+    sfx.damageTaken3.setVolume(0.5);
+});
 
 audioLoader.load('sound/Sword.mp3', function (buffer) {
     sfx.sword.setBuffer(buffer);
@@ -589,7 +619,7 @@ for (const [key, file] of Object.entries(bgmFiles)) {
     audioLoader.load(file, function (buffer) {
         bgm[key].setBuffer(buffer);
         bgm[key].setLoop(true);
-        bgm[key].setVolume(0);  
+        bgm[key].setVolume(0);
     });
 }
 
@@ -666,9 +696,9 @@ let isPlayerMoving = false;
 let activeEnvMesh = null;
 let hoveredWallMesh = null;
 
-///////////////////////
+//////////////////////
 //fisica e pathfinding
-///////////////////////
+//////////////////////
 
 function isWalkable(r, c) {
     if (r < 0 || r >= currentLevelData.map.length || c < 0 || c >= currentLevelData.map[0].length) return false;
@@ -787,19 +817,13 @@ function executePathMovement(path) {
                     renderer.domElement.style.display = 'none';
 
                     if (nextLevel === 1) {
-                        switchBGM(bgm.level1);
                         showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 2) {
-                        switchBGM(bgm.level2);
                         showCharacterDialogue(mission3Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 3) {
-                        switchBGM(bgm.level3);
                         showCharacterDialogue(mission4Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 4) {
-                        showCharacterDialogue(mission5Dialogue, () => { startLevel(nextLevel); });
-                    } else if (nextLevel === 5) {
-                        switchBGM(bgm.level5);
-                        showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel); });
+                        showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel+1); });
                     } else {
                         //se for um nível sem diálogo (já não é preciso mas vou deixar)
                         startLevel(nextLevel);
@@ -2187,6 +2211,15 @@ function takeDamage(amt) {
 
     pushToLog(`NEURAL SPIKE! -${amt} HP`, true);
 
+    if (player.hp > 0) {
+        const damageSounds = [sfx.damageTaken1, sfx.damageTaken2, sfx.damageTaken3];
+        //escolhe um dos sons aleatóriamente
+        const randomHitSound = damageSounds[Math.floor(Math.random() * damageSounds.length)];
+
+        if (randomHitSound.isPlaying) randomHitSound.stop();
+        randomHitSound.play();
+    }
+
     const damageOverlay = document.getElementById('damage-overlay');
     if (damageOverlay) {
         damageOverlay.classList.add('active');
@@ -2200,6 +2233,15 @@ function takeDamage(amt) {
     cameraShakeIntensity = 0.5;
 
     if (player.hp <= 0) {
+
+        if (currentBGM) {
+            currentBGM.pause();
+            currentBGM = null;
+        }
+
+        if (sfx.death.isPlaying) sfx.death.stop();
+        sfx.death.play();
+
         renderer.domElement.style.display = 'none';
         switchScreen('bsod-screen');
 
@@ -3292,7 +3334,7 @@ function playEndingCutscene() {
 
     const script = [
         { side: "right", name: "Eel", text: "Wait, Nyx. What are you doing? \nYou didn't get the data!" },
-        { side: "left", name: "Nyx", text: "It's a trap." },
+        { side: "left", name: "Nyx", text: "EEL is right. It's a trap." },
         { side: "left", name: "Nyx", text: "The ICE was too predictable. The physical patrols left deliberate blind spots so we could get through." },
         { side: "left", name: "Nyx", text: "They wanted us to get this far. They were watching." },
         { side: "right", name: "Snapper", text: "Are you crazy? We are so close! Turn back!" },

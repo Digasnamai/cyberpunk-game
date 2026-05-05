@@ -20,7 +20,7 @@ export const mission1Dialogue = [
     { side: "left", name: "Nyx", text: "Thanks Eel, today Netfish will change the destiny of Matosinhos." },
 ];
 
-//diálogo antes da 2ª missao
+//diálogo antes da 1ª missao
 export const mission2Dialogue = [
     { side: "right", name: "Guard", text: "Stop! The scanner is not identifying you, nor the vehicle, with authorized passage." },
     { side: "left", name: "Nyx", text: "Sorry sir, I'm new here, here's my keycard to check." },
@@ -31,6 +31,7 @@ export const mission2Dialogue = [
 
 ];
 
+// ... 2ª
 export const mission3Dialogue = [
     { side: "left", name: "Nyx", text: "That place was huge, it had several manufacturing sectors, from weapons to processed food." },
     { side: "right", name: "Snapper", text: "Militech uses the port as a logistics center for its operations in Europe, they have equipment there to support an army for years. Imagine if we had access to all of this." },
@@ -39,6 +40,7 @@ export const mission3Dialogue = [
 
 ];
 
+// ... 3ª
 export const mission4Dialogue = [
     { side: "left", name: "Nyx", text: "I'm on my way to the container yard, I wonder why they still have these ship to shore cranes." },
     { side: "right", name: "Eel", text: "Even with the naval mines that Arasaka left the world during the war, transport by boat still happens along the coast, but more and more things are transported by aerozep." },
@@ -51,16 +53,21 @@ export const mission4Dialogue = [
 ];
 
 //não usado
+
 export const mission5Dialogue = [
     { side: "left", name: "Nyx", text: "I almost fell out of one of the containers, now I just have to go through the testing grounds and reach the tower, I'm almost there." },
     { side: "right", name: "Eel", text: "They must have experimental drones there, I'd love to see them." },
     { side: "left", name: "Nyx", text: "I'd rather not." }
 ];
 
+
+// ... 4ª
 export const mission6Dialogue = [
     { side: "left", name: "NYX", text: "I almost fell out of one of those containers." },
     { side: "right", name: "Eel", text: "Still here though. So everything's fine!" },
     { side: "left", name: "NYX", text: "Yeah, true I guess." },
     { side: "right", name: "Snapper", text: "Only the tower left, the exit aerozep will leave soon so don't take too long, get in, grab the data and get out." },
-    { side: "left", name: "NYX", text: "No worries this is what I do best" },
+    { side: "left", name: "NYX", text: "No worries this is what I do best, won't be long before we're swimming in cash" },
+    { side: "right", name: "Eel", text: "I'm sort of surprised it's going so well" },
+    { side: "left", name: "NYX", text: "Don't jinx it" },
 ];
