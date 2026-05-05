@@ -95,7 +95,7 @@ export const LEVEL_DATA = {
                             },
                             {
                                 title: "NET COMBAT",
-                                text: "You can use <b>SWORDFISH</b> to fight ICE at close range or <b>HARPOON</b> for longer distances, you can also use <b>SCALES</b> to defend yourself from attacks with a 70% chance of success. <b>SWIM</b> gives you a 30% chance to escape an enemy into the floor below if there is one. <br><br> Each ICE has a different effect so pay attention to the log at the bottom of the screen to get info on what's happening.",
+                                text: "You can use <b>SWORDFISH</b> to fight ICE at close range or <b>HARPOON</b> for longer distances, you can also use <b>SCALES</b> to defend yourself from attacks with 70% chance of success. <b>SWIM</b> gives you a 30% chance to escape an enemy into the floor below if there is one. <br><br> Each ICE has a different effect so pay attention to the log at the bottom of the screen to get info on what's happening.",
                                 mediaType: "image",
                                 mediaSrc: "media/placeholder.png"
                             },

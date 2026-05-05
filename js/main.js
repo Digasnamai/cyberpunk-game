@@ -427,9 +427,11 @@ document.querySelectorAll('.map-node').forEach(node => {
         if (level === 3) {
             showCharacterDialogue(mission4Dialogue, () => { startLevel(level); });
         }
+        /*
         if (level === 4) {
             showCharacterDialogue(mission5Dialogue, () => { startLevel(level); });
         }
+        */
         if (level === 5) {
             showCharacterDialogue(mission6Dialogue, () => { startLevel(level); });
         }
@@ -472,6 +474,7 @@ function startLevel(levelNum) {
     //constroi o mundo 3D
     buildPhysicalWorld();
     initNetrun();
+    currentMode = 'PHYSICAL';
     toggleMode('PHYSICAL'); //define o modo inicial para o mundo fisico
 
     //mostra o tutorial se o nível possuir um array de tutorial 
@@ -560,8 +563,20 @@ const sfx = {
     damageTaken1: new THREE.Audio(audioListener),
     damageTaken2: new THREE.Audio(audioListener),
     damageTaken3: new THREE.Audio(audioListener),
-    death: new THREE.Audio(audioListener)
+    death: new THREE.Audio(audioListener),
+    jackIn: new THREE.Audio(audioListener),
+    jackOut: new THREE.Audio(audioListener)
 };
+
+audioLoader.load('sound/JackIn.mp3', function (buffer) {
+    sfx.jackIn.setBuffer(buffer);
+    sfx.jackIn.setVolume(0.7);
+});
+
+audioLoader.load('sound/JackOut.mp3', function (buffer) {
+    sfx.jackOut.setBuffer(buffer);
+    sfx.jackOut.setVolume(0.7);
+});
 
 audioLoader.load('sound/death.mp3', function (buffer) {
     sfx.death.setBuffer(buffer);
@@ -817,13 +832,17 @@ function executePathMovement(path) {
                     renderer.domElement.style.display = 'none';
 
                     if (nextLevel === 1) {
+                        switchBGM(bgm.level1);
                         showCharacterDialogue(mission2Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 2) {
+                        switchBGM(bgm.level2);
                         showCharacterDialogue(mission3Dialogue, () => { startLevel(nextLevel); });
                     } else if (nextLevel === 3) {
+                        switchBGM(bgm.level3);
                         showCharacterDialogue(mission4Dialogue, () => { startLevel(nextLevel); });
-                    } else if (nextLevel === 4) {
-                        showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel + 1); });
+                    } else if (nextLevel === 4) { //aqui salto o 4 dou start ao 5
+                        switchBGM(bgm.level5);
+                        showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel); });
                     } else {
                         //se for um nível sem diálogo (já não é preciso mas vou deixar)
                         startLevel(nextLevel);
@@ -1719,7 +1738,7 @@ function checkPhysicalDetection() {
     const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
     if (inVision) {
         pushToLog("SIMULATION FAILED. CAUGHT. RECALCULATING...", false);
-        
+
         const damageSounds = [sfx.damageTaken1, sfx.damageTaken2, sfx.damageTaken3];
         //escolhe um dos sons aleatóriamente
         const randomHitSound = damageSounds[Math.floor(Math.random() * damageSounds.length)];
@@ -2183,8 +2202,20 @@ function spawnICE(f, x, z) {
 
 //alterna entre o mundo físico e netspace
 function toggleMode(mode) {
+    const previousMode = currentMode;
     currentMode = mode;
     const isNet = mode === 'NETRUN';
+
+    //previne que o sfx de jack out dê play ao começar o nível
+    if (previousMode !== undefined && previousMode !== mode) {
+        if (isNet) {
+            if (sfx.jackIn.isPlaying) sfx.jackIn.stop();
+            sfx.jackIn.play();
+        } else {
+            if (sfx.jackOut.isPlaying) sfx.jackOut.stop();
+            sfx.jackOut.play();
+        }
+    }
 
     const toggleDepth = (m) => {
         if (m.material) {

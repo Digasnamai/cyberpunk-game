@@ -24,10 +24,10 @@ export const mission1Dialogue = [
 export const mission2Dialogue = [
     { side: "right", name: "Guard", text: "Stop! The scanner is not identifying you, nor the vehicle, with authorized passage." },
     { side: "left", name: "Nyx", text: "Sorry sir, I'm new here, here's my keycard to check." },
-    { side: "right", name: "Guard", text: "Let me see. Ahm … Fernanda Santos … 25 years old… maintenance service … everything seems to be ok, when you are in the staff area, ask someone to fix the problem with the identification." },
+    { side: "right", name: "Guard", text: "Let me see. Ahm… Fernanda Santos… 25 years old… maintenance service… everything seems to be ok. When you get to the staff area, ask someone to fix the problem with the identification." },
     { side: "left", name: "Nyx", text: "Will do. Thank you sir." },
-    { side: "left", name: "Nyx", text: "Guys, Can you hear me? I'm inside the port." },
-    { side: "right", name: "Snapper", text: "Loud and clear, now go through the manufacturing facility, there shouldn't be any complicated systems, just don't be seen." },
+    { side: "left", name: "Nyx", text: "Guys, can you hear me? I'm inside the port." },
+    { side: "right", name: "Snapper", text: "Loud and clear, now go through the manufacturing facility, there shouldn't be any complicated systems, just don't get caught." },
 
 ];
 
