@@ -307,7 +307,7 @@ function showCharacterDialogue(dialogueArray, onCompleteCallback) {
 
     const characterArt = {
         "Snapper": "media/Snapper.png", //
-        //"Nyx": "assets/Nyx.png",
+        "Nyx": "media/Nyx_Perfil.png",
         //"Eel": "assets/Eel.png"
     };
 
@@ -909,7 +909,7 @@ function executePathMovement(path) {
         //atualiza os cones de visão de todos os inimigos nas suas novas posições
         updateVision();
 
-        //aborta o movimento se o jogador caminhar inadvertidamente para a visão de um inimigo e retorna-o ao começo do nivel
+        //aborta o movimento se o jogador caminhar inadvertidamente para a visão de um inimigo e retorna-o ao último checkpoint
         const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
         if (inVision) {
             checkPhysicalDetection();
@@ -2217,7 +2217,7 @@ function toggleMode(mode) {
 
             //limpeza dos status effects quando se dá jack out
             player.statuses.disabledPrograms = { swordfish: 0, harpoon: 0, scales: 0, swim: 0 };
-            player.statuses.krakenActive = false; 
+            player.statuses.krakenActive = false;
             player.statuses.scalesBarrier = 0;
             player.statuses.burning = 0;
             player.statuses.scorpionActive = false;
@@ -2577,7 +2577,12 @@ window.addEventListener('mousedown', (e) => {
                             //verifica se o jogador sobreviveu ao turno sem ser apanhado
                             const inVision = visionGroup.children.some(v => v.userData.r === player.r && v.userData.c === player.c);
                             if (player.r === startR && player.c === startC && !inVision) {
-                                executePathMovement(savedPath);
+                                //verifica se o destino pretendido ainda é válido
+                                const targetStep = savedPath[savedPath.length - 1];
+
+                                if (isWalkable(targetStep.r, targetStep.c)) {
+                                    executePathMovement(savedPath);
+                                }
                             }
                         }, 400);
 

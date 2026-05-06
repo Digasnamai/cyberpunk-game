@@ -5,6 +5,10 @@ body {
     font-family: 'Courier New', monospace;
     overflow: hidden;
     /* Previne scrollbars */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Previne text highlights */
 }
 
 /* 
