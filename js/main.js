@@ -2214,6 +2214,14 @@ function toggleMode(mode) {
         } else {
             if (sfx.jackOut.isPlaying) sfx.jackOut.stop();
             sfx.jackOut.play();
+
+            //limpeza dos status effects quando se dá jack out
+            player.statuses.disabledPrograms = { swordfish: 0, harpoon: 0, scales: 0, swim: 0 };
+            player.statuses.krakenActive = false; 
+            player.statuses.scalesBarrier = 0;
+            player.statuses.burning = 0;
+            player.statuses.scorpionActive = false;
+            player.statuses.netApPenalty = 0;
         }
     }
 
