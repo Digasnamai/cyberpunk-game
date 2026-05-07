@@ -308,7 +308,8 @@ function showCharacterDialogue(dialogueArray, onCompleteCallback) {
     const characterArt = {
         "Snapper": "media/Snapper.png", //
         "Nyx": "media/Nyx_Perfil.png",
-        //"Eel": "assets/Eel.png"
+        "Eel": "media/Eel.png",
+        "Guard": "media/MilitechAgent.png"
     };
 
     function typeWriter(textElement, text, index) {
