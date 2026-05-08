@@ -498,7 +498,7 @@ function renderTutorialPage() {
 
     const mediaContainer = document.getElementById('tutorial-media-container');
 
-    //aceita video ou imagens para os exemplos, por agora apenas temos um placeholder preto
+    //aceita video ou imagens para os exemplos
     if (page.mediaType === 'video') {
         mediaContainer.innerHTML = `<video src="${page.mediaSrc}" autoplay loop muted playsinline></video>`;
     } else {

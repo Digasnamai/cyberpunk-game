@@ -10,7 +10,7 @@ export const LEVEL_DATA = {
                 title: "TRAINING LEVEL",
                 text: "Welcome to the VR Training Simulator. Your objective is to reach the extraction point.<br><br>Move by clicking on the cyan tiles. Every step uses <b>Action Points (AP)</b>. If you run out, <b>end your turn using spacebar</b>.",
                 mediaType: "image",
-                mediaSrc: "media/placeholder.png"
+                mediaSrc: "media/movementTuto.gif"
             }
         ],
 
@@ -31,14 +31,14 @@ export const LEVEL_DATA = {
                 r: 3, c: 3, fired: false,
                 title: "THREAT AVOIDANCE",
                 text: "Red cells indicate enemy Line of Sight. If a guard sees you, you will be reset to the last checkpoint.<br><br><b>End your turn (spacebar)</b>  to let the security guard look the other way, then sneak past it",
-                mediaType: "image", mediaSrc: "media/placeholder.png"
+                mediaType: "image", mediaSrc: "media/guardTuto.gif"
             },
             {
                 // Dispara quando o jogador chega perto do terminal
                 r: 3, c: 7, fired: false,
-                title: "NETRUNNING & COMBAT",
+                title: "NETRUNNING",
                 text: "Physical doors can be locked and opening them requires you to hack the nearby terminal.<br><br>Click the <b>Terminal</b> to enter its Net Architecture, reach the bottom floor and click on the Core to open the door.",
-                mediaType: "image", mediaSrc: "media/placeholder.png"
+                mediaType: "image", mediaSrc: "media/Terminal.png"
             }
         ],
 
@@ -61,25 +61,25 @@ export const LEVEL_DATA = {
                             {
                                 title: "THE NET ARCHITECTURE",
                                 text: "Welcome to the Net Architecture.<br><br>You are currently on the top floor of this architecture. Your physical body is safe but Internal Countermeasure Electronics or <b>ICE</b> programs will hunt you here.",
-                                mediaType: "image", mediaSrc: "media/placeholder.png"
+                                mediaType: "image", mediaSrc: "media/architecture.png"
                             },
                             {
                                 title: "MOVEMENT",
                                 text: "You can think of a net architecture like an elevator that moves between floors, your goal is to reach the bottom floor to hack it.<br><br>You can move arround by <b>pressing adjacent tiles</b>. To move between floors you can use <b>'ASCEND'</b> to go up and <b>'DIVE'</b> to go down.",
                                 mediaType: "image",
-                                mediaSrc: "media/placeholder.png"
+                                mediaSrc: "media/netMovementTuto.gif"
                             },
                             {
                                 title: "NET UI",
                                 text: "On the <b>left side</b> of the screen you'll find the <b>list of programs</b> you can use and on the <b>right side</b> the <b>layout of the Architecture</b>, each layer is a floor and the one that's moved to the side is the one you're currently on.",
                                 mediaType: "image",
-                                mediaSrc: "media/placeholder.png"
+                                mediaSrc: "media/UITuto.png"
                             },
                             {
                                 title: "FLOORS",
                                 text: "In order to get information you can use <b>SONAR</b>, it scans the architecture allowing you to see different floors and where ICE are.",
                                 mediaType: "image",
-                                mediaSrc: "media/placeholder.png"
+                                mediaSrc: "media/sonarTuto.gif"
                             },
                         ]
                     },
@@ -91,13 +91,13 @@ export const LEVEL_DATA = {
                                 title: "ICE ENCOUNTER",
                                 text: "You dived to the Core floor but it is protected by an ICE!<br><br> You'll need to defeat it before interacting with the terminal and opening the door",
                                 mediaType: "image",
-                                mediaSrc: "media/placeholder.png"
+                                mediaSrc: "media/ICETuto.png"
                             },
                             {
                                 title: "NET COMBAT",
                                 text: "You can use <b>SWORDFISH</b> to fight ICE at close range or <b>HARPOON</b> for longer distances, you can also use <b>SCALES</b> to defend yourself from attacks with 70% chance of success. <b>SWIM</b> gives you 30% chance to escape an enemy into an inferior floor. <br><br> Each ICE has a different effect so pay attention to the log at the bottom of the screen to get info on what's happening.",
                                 mediaType: "image",
-                                mediaSrc: "media/placeholder.png"
+                                mediaSrc: "media/combatTuto.gif"
                             },
                         ]
                     },
@@ -119,7 +119,7 @@ export const LEVEL_DATA = {
         //posição inicial do jogador 
         spawn: { r: 0, c: 0 },
 
-        //informação de tutorial ligada a este nível
+        //informação de tutorial ligada a este nível (pasada para o nível de tutorial)
         tutorial: [],
         /*
             {
@@ -218,7 +218,7 @@ export const LEVEL_DATA = {
                 title: "LOCKED LEVELS",
                 text: "Levels inside an architecture might be locked, you must look for a decryption key to proceed",
                 mediaType: "image",
-                mediaSrc: "media/placeholder.png"
+                mediaSrc: "media/datapadTuto.png"
             },
         ],
 
@@ -318,7 +318,7 @@ export const LEVEL_DATA = {
                 title: "MOVING PLATFORMS",
                 text: "You can move on top of moving platforms to cross gaps. Each time they move the player will follow.",
                 mediaType: "image",
-                mediaSrc: "media/placeholder.png"
+                mediaSrc: "media/platformTuto.gif"
             }
         ],
 

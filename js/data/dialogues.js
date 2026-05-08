@@ -63,11 +63,11 @@ export const mission5Dialogue = [
 
 // ... 4ª
 export const mission6Dialogue = [
-    { side: "left", name: "NYX", text: "I almost fell out of one of those containers." },
+    { side: "left", name: "Nyx", text: "I almost fell out of one of those containers." },
     { side: "right", name: "Eel", text: "Still here though. So everything's fine!" },
-    { side: "left", name: "NYX", text: "Yeah, true I guess." },
+    { side: "left", name: "Nyx", text: "Yeah, true I guess." },
     { side: "right", name: "Snapper", text: "Only the tower left, the exit aerozep will leave soon so don't take too long, get in, grab the data and get out." },
-    { side: "left", name: "NYX", text: "No worries this is what I do best, won't be long before we're swimming in cash" },
+    { side: "left", name: "Nyx", text: "No worries this is what I do best, won't be long before we're swimming in cash" },
     { side: "right", name: "Eel", text: "I'm sort of surprised it's going so well" },
-    { side: "left", name: "NYX", text: "Don't jinx it" },
+    { side: "left", name: "Nyx", text: "Don't jinx it" },
 ];
