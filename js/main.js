@@ -857,7 +857,7 @@ function executePathMovement(path) {
         const nextR = path[stepIndex].r;
         const nextC = path[stepIndex].c;
 
-        //Calcula o ângulo exato virado para o próximo quadrado!
+        //Calcula o ângulo exato virado para o próximo quadrado
         player.targetRot = Math.atan2(nextC - player.c, nextR - player.r);
 
         //move o Jogador
@@ -3097,7 +3097,7 @@ document.getElementById('btn-swim').onclick = () => {
         }
 
         if (Math.random() > 0.30) {
-            pushToLog("SWIM.EXE FAILED: EVASION UNSUCCESSFUL. ICE INTERCEPTED.", true);
+            pushToLog("SWIM.EXE FAILED: UNSUCCESSFUL.", true);
             consumeNetAction(1); //consome 1 NetAction na mesma
             return;
         }
@@ -3407,18 +3407,21 @@ function playEndingCutscene() {
     renderer.domElement.style.display = 'none';
 
     const script = [
-        { side: "right", name: "Eel", text: "Wait, Nyx. What are you doing? \nYou didn't get the data!" },
-        { side: "left", name: "Nyx", text: "EEL is right. It's a trap." },
+        { side: "right", name: "Snapper", text: "Wait, Nyx. What are you doing? \nYou didn't get the data!" },
+        { side: "left", name: "Nyx", text: "EEL is right. It's strange we even got here so easily." },
         { side: "left", name: "Nyx", text: "The ICE was too predictable. The physical patrols left deliberate blind spots so we could get through." },
         { side: "left", name: "Nyx", text: "They wanted us to get this far. They were watching." },
         { side: "right", name: "Snapper", text: "Are you crazy? We are so close! Turn back!" },
         { side: "left", name: "Nyx", text: "I'm getting out for your sake too, if they get me they can get you guys as well." },
+        { side: "right", name: "Eel", text: "She's right, better safe than sorry." },
+        { side: "left", name: "Nyx", text: "I'm heading to the aerozep, it should still take me out of here safely" },
+        { side: "right", name: "Snapper", text: "Alright..." },
         { side: "right", name: "SYSTEM", text: "WARNING: \nCONNECTION TERMINATED." },
     ];
 
     //usa a função padrão de diálogos e volta ao início quando terminar
     showCharacterDialogue(script, () => {
-        location.reload();
+        triggerEndingSequence('media/Final_Sair.png', 'CYBERPUNK &gt;&lt;#&gt;<br>GOOD ENDING');
     });
 }
 
@@ -3430,20 +3433,50 @@ function playBadEndingCutscene() {
         { side: "right", name: "SYSTEM", text: "SYSTEM OVERRIDE SUCCESSFUL.\nACCESSING MAINFRAME..." },
         { side: "right", name: "SYSTEM?", text: "TRACE COMPLETE. TARGET IS ISOLATED IN THE CONTROL TOWER" },
         { side: "right", name: "SYSTEM?", text: "SECURITY TEST COMPLETE. VULNERABILITIES LOGGED." },
-        { side: "right", name: "SYSTEM?", text: "TANK YOU FOR YOUR PARTICIPATION. GOODBYE RUNNER" },
+        { side: "right", name: "SYSTEM?", text: "TANK YOU FOR YOUR PARTICIPATION.\n GOODBYE RUNNER" },
         { side: "right", name: "Eel", text: "SHIT IT'S A TRAP! GET THE DATA AND SCRAM!" },
         { side: "right", name: "SYSTEM", text: "WARNING: \nDOWNLOAD BLOCKED." },
         { side: "right", name: "Snapper", text: "FORGET THE DATA GET OUT OF THERE!" },
         { side: "right", name: "SYSTEM", text: "WARNING: \nDOOR BREACH DETECTED IN PHYSICAL SPACE." },
-        { side: "right", name: "GUARD", text: "I found the target. Roger. Opening fire!" },
+        { side: "right", name: "Guard", text: "I found the target.\n Roger.\n Opening fire!" },
         { side: "right", name: "SYSTEM", text: "WARNING: \nVITALS CRITICAL..." },
         { side: "right", name: "SYSTEM", text: "WARNING: \nCONNECTION TERMINATED." },
     ];
 
     //usa a função padrão de diálogos e volta ao início quando terminar
     showCharacterDialogue(script, () => {
-        location.reload();
+        triggerEndingSequence('media/Final_Ficar.png', 'CYBERPUNK &gt;&lt;#&gt;<br>BAD ENDING');
     });
+}
+
+//imagem e texto final com fades
+function triggerEndingSequence(imageSrc, endingText) {
+    const endScreen = document.getElementById('ending-screen');
+    const endTitle = document.getElementById('ending-title');
+    
+    //define a imagem e o texto dependendo do final
+    endScreen.style.backgroundImage = `url('${imageSrc}')`;
+    endTitle.innerHTML = endingText;
+
+    switchScreen('ending-screen');
+
+    setTimeout(() => {
+        endScreen.style.opacity = '1';
+    }, 100);
+
+    //espera 6 segundos e depois faz fade out
+    setTimeout(() => {
+        endScreen.style.opacity = '0';
+
+        //espera os 2 segundos do fade out terminar para reiniciar a página
+        setTimeout(() => {
+            appState = 'MENU';
+            switchScreen('main-menu');
+            renderer.domElement.style.display = 'none';
+            endScreen.style.display = 'none'; 
+            switchBGM(bgm.intro);
+        }, 2000);
+    }, 6000);
 }
 
 ////////////////////////////////////////

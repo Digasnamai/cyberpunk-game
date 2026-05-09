@@ -744,30 +744,26 @@ Log dinamico
     animation: skullPulse 3s infinite normal;
 }
 
-/* ecrã final e créditos */
+/*finais*/
+
 #ending-screen {
-    width: 100vw;
-    height: 100vh;
-    background-color: #020202;
-}
-
-#ending-screen.active {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-#ending-text {
-    color: #00ffcc;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 28px;
-    text-align: center;
-    text-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
-    white-space: pre-line;
+    background-color: black;
     opacity: 0;
-    transition: opacity 1s ease-in-out;
+    transition: opacity 2s ease-in-out;
+    
+    /* Configurações da imagem de fundo */
+    background-size: cover;      
+    background-position: center; 
+    background-repeat: no-repeat; 
 }
 
-#ending-text.visible {
-    opacity: 1;
+#ending-title {
+    color: #00ffcc;
+    font-size: 60px;
+    text-shadow: 0 0 20px #00ffcc, 0 0 40px black; 
+    margin: 0;
+    letter-spacing: 4px;
+    text-align: center;
+
+    padding: 20px;
 }
