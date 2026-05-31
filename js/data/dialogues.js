@@ -52,20 +52,17 @@ export const mission4Dialogue = [
 
 ];
 
-//não usado
-
+// ... 4ª
 export const mission5Dialogue = [
-    { side: "left", name: "Nyx", text: "I almost fell out of one of the containers, now I just have to go through the testing grounds and reach the tower, I'm almost there." },
-    { side: "right", name: "Eel", text: "They must have experimental drones there, I'd love to see them." },
+    { side: "left", name: "Nyx", text: "I almost fell out of one of the containers, now I just have to go through the testing facility and reach the tower, I'm almost there." },
+    { side: "right", name: "Eel", text: "They must have some weird experiments inside, I'd love to see them." },
     { side: "left", name: "Nyx", text: "I'd rather not." }
 ];
 
-
-// ... 4ª
+// ... 5ª
 export const mission6Dialogue = [
-    { side: "left", name: "Nyx", text: "I almost fell out of one of those containers." },
-    { side: "right", name: "Eel", text: "Still here though. So everything's fine!" },
-    { side: "left", name: "Nyx", text: "Yeah, true I guess." },
+    { side: "left", name: "Nyx", text: "I saw some weird experiments in the labs. Seems they're cooking up some bio-weapon." },
+    { side: "right", name: "Eel", text: "Let's wrap this up quickly then, being near that won't bring any good" },
     { side: "right", name: "Snapper", text: "Only the tower left, the exit aerozep will leave soon so don't take too long, get in, grab the data and get out." },
     { side: "left", name: "Nyx", text: "No worries this is what I do best, won't be long before we're swimming in cash" },
     { side: "right", name: "Eel", text: "I'm sort of surprised it's going so well" },

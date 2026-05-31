@@ -18,8 +18,8 @@ const scene = new THREE.Scene();
 //declaração dos modelos 3D 
 let models = {
     hellhound: null, asp: null, krakenGltf: null, wispGltf: null, scorpionGltf: null,
-    guard: null, doorGltf: null, cameraGltf: null, terminalGltf: null, plafplatformGltf: null,
-    level1: null, level2: null, level3: null, level5: null,
+    guard: null, doorGltf: null, cameraGltf: null, terminalGltf: null, plafplatformGltf: null, rotatingPlatformGltf: null, droneGltf: null,
+    level1: null, level2: null, level3: null, level4: null, level5: null,
     nyxGltf: null, netrunnerGltf: null, swordfishGltf: null, harpoonGltf: null
 };
 
@@ -68,6 +68,21 @@ document.getElementById('btn-start-game').onclick = () => {
 };
 
 const loader = new GLTFLoader(loadingManager);
+
+loader.load('models/Drone.glb', function (gltf) {
+    models.droneGltf = gltf;
+    console.log("Drone model loaded!");
+});
+
+loader.load('models/level4.glb', function (gltf) {
+    models.level4 = gltf.scene;
+    console.log("Level 4 Environment loaded!");
+});
+
+loader.load('models/Rotating_platform.glb', function (gltf) {
+    models.rotatingPlatformGltf = gltf;
+    console.log("Rotating Platform model loaded!");
+});
 
 loader.load('models/level5.glb', function (gltf) {
     models.level5 = gltf.scene;
@@ -413,7 +428,7 @@ document.querySelectorAll('.map-node').forEach(node => {
         else if (level === 1) switchBGM(bgm.level1);
         else if (level === 2) switchBGM(bgm.level2);
         else if (level === 3) switchBGM(bgm.level3);
-        //else if (level === 4) switchBGM(bgm.level4); 
+        else if (level === 4) switchBGM(bgm.level4);
         else if (level === 5) switchBGM(bgm.level5);
 
         if (level === 0) {
@@ -428,11 +443,11 @@ document.querySelectorAll('.map-node').forEach(node => {
         if (level === 3) {
             showCharacterDialogue(mission4Dialogue, () => { startLevel(level); });
         }
-        /*
+
         if (level === 4) {
             showCharacterDialogue(mission5Dialogue, () => { startLevel(level); });
         }
-        */
+
         if (level === 5) {
             showCharacterDialogue(mission6Dialogue, () => { startLevel(level); });
         }
@@ -454,6 +469,7 @@ function startLevel(levelNum) {
     else if (currentLevelIndex === 1) switchBGM(bgm.level1);
     else if (currentLevelIndex === 2) switchBGM(bgm.level2);
     else if (currentLevelIndex === 3) switchBGM(bgm.level3);
+    else if (currentLevelIndex === 4) switchBGM(bgm.level4);
     else if (currentLevelIndex === 5) switchBGM(bgm.level5);
 
     //reinicia os atributos do jogador, sendo o local inicial consoante a data do nível
@@ -566,8 +582,26 @@ const sfx = {
     damageTaken3: new THREE.Audio(audioListener),
     death: new THREE.Audio(audioListener),
     jackIn: new THREE.Audio(audioListener),
-    jackOut: new THREE.Audio(audioListener)
+    jackOut: new THREE.Audio(audioListener),
+    iceDeath1: new THREE.Audio(audioListener),
+    iceDeath2: new THREE.Audio(audioListener),
+    iceDeath3: new THREE.Audio(audioListener)
 };
+
+audioLoader.load('sound/iceDeath1.mp3', function (buffer) {
+    sfx.iceDeath1.setBuffer(buffer);
+    sfx.iceDeath1.setVolume(0.8);
+});
+
+audioLoader.load('sound/iceDeath2.mp3', function (buffer) {
+    sfx.iceDeath2.setBuffer(buffer);
+    sfx.iceDeath2.setVolume(0.8);
+});
+
+audioLoader.load('sound/iceDeath3.mp3', function (buffer) {
+    sfx.iceDeath3.setBuffer(buffer);
+    sfx.iceDeath3.setVolume(0.8);
+});
 
 audioLoader.load('sound/JackIn.mp3', function (buffer) {
     sfx.jackIn.setBuffer(buffer);
@@ -614,6 +648,7 @@ const bgm = {
     level1: new THREE.Audio(audioListener),
     level2: new THREE.Audio(audioListener),
     level3: new THREE.Audio(audioListener),
+    level4: new THREE.Audio(audioListener),
     level5: new THREE.Audio(audioListener),
     tutorial: new THREE.Audio(audioListener),
     goodEnding: new THREE.Audio(audioListener),
@@ -625,6 +660,7 @@ const bgmFiles = {
     level1: 'sound/level1.mp3',
     level2: 'sound/level2.mp3',
     level3: 'sound/level3.mp3',
+    level4: 'sound/level4.mp3',
     level5: 'sound/level5.mp3',
     tutorial: 'sound/tutorial.mp3',
     goodEnding: 'sound/GoodEnding.mp3',
@@ -645,6 +681,10 @@ const MAX_BGM_VOL = 1.2;
 function fadeAudio(audio, targetVolume, duration) {
     if (!audio) return;
 
+    if (audio.fadeInterval) {
+        clearInterval(audio.fadeInterval);
+    }
+
     if (!audio.isPlaying && targetVolume > 0) {
         audio.setVolume(0);
         audio.play();
@@ -654,13 +694,18 @@ function fadeAudio(audio, targetVolume, duration) {
     const steps = (duration * 1000) / stepTime;
     const volumeStep = (targetVolume - audio.getVolume()) / steps;
 
-    const fadeInterval = setInterval(() => {
+    if (volumeStep === 0) {
+        if (targetVolume === 0) audio.pause();
+        return;
+    }
+
+    audio.fadeInterval = setInterval(() => {
         let newVol = audio.getVolume() + volumeStep;
 
         //se atingiu ou ultrapassou o volume desejado
         if ((volumeStep > 0 && newVol >= targetVolume) || (volumeStep < 0 && newVol <= targetVolume)) {
             audio.setVolume(targetVolume);
-            clearInterval(fadeInterval);
+            clearInterval(audio.fadeInterval);
             if (targetVolume === 0) audio.pause();
         } else {
             audio.setVolume(newVol);
@@ -786,8 +831,8 @@ function getPath(startR, startC, targetR, targetC, maxAP) {
 
 //limpa os highlights quando se põe o rato sobre uma cell e repõe o estado do mapa
 function clearHighlights() {
-    physGridGroup.children.forEach(child => {
-        if (child.userData.type === 'floor' || child.userData.type === 'platform') {
+    physGridGroup.traverse(child => {
+        if (child.userData && (child.userData.type === 'floor' || child.userData.type === 'platform')) {
             const isExit = currentLevelData.exit && currentLevelData.exit.r === child.userData.r && currentLevelData.exit.c === child.userData.c;
             if (child.material && child.material.emissive) {
                 //se for a saída, mantém a luz de neon ciano
@@ -841,7 +886,10 @@ function executePathMovement(path) {
                     } else if (nextLevel === 3) {
                         switchBGM(bgm.level3);
                         showCharacterDialogue(mission4Dialogue, () => { startLevel(nextLevel); });
-                    } else if (nextLevel === 4) { //aqui salto o 4 dou start ao 5
+                    } else if (nextLevel === 4) {
+                        switchBGM(bgm.level4);
+                        showCharacterDialogue(mission5Dialogue, () => { startLevel(nextLevel); });
+                    } else if (nextLevel === 5) {
                         switchBGM(bgm.level5);
                         showCharacterDialogue(mission6Dialogue, () => { startLevel(nextLevel); });
                     } else {
@@ -889,6 +937,9 @@ function executePathMovement(path) {
         if (currentLevelData.drones) {
             currentLevelData.drones.forEach(drone => {
                 if (drone.active !== false) {
+                    const oldR = drone.r;
+                    const oldC = drone.c;
+
                     if (drone.forward) {
                         drone.pathIdx++;
                         if (drone.pathIdx >= drone.path.length - 1) drone.forward = false;
@@ -898,6 +949,10 @@ function executePathMovement(path) {
                     }
                     drone.r = drone.path[drone.pathIdx][0];
                     drone.c = drone.path[drone.pathIdx][1];
+
+                    if (drone.r !== oldR || drone.c !== oldC) {
+                        drone.targetRot = Math.atan2(drone.c - oldC, drone.r - oldR);
+                    }
 
                     if (drone.mesh) {
                         drone.mesh.userData.r = drone.r;
@@ -992,6 +1047,11 @@ function buildPhysicalWorld() {
         envMesh.position.set(0, 0, 0);
         envMesh.updateMatrixWorld(true);
     }
+    else if (currentLevelIndex === 4 && models.level4) {
+        envMesh = models.level4.clone();
+        envMesh.position.set(0, 0, 0);
+        envMesh.updateMatrixWorld(true);
+    }
     else if (currentLevelIndex === 5 && models.level5) {
         envMesh = models.level5.clone();
         envMesh.position.set(0, 0, 0);
@@ -1034,6 +1094,81 @@ function buildPhysicalWorld() {
 
     const downVector = new THREE.Vector3(0, -1, 0); //Vetor a apontar diretamente para baixo
     currentLevelData.normalMap = [];
+
+    const hasRotatingPlatform = currentLevelData.terminals && currentLevelData.terminals.some(t => t.action === 'rotate_platform');
+
+    //plataforma central do nível 4
+    if (hasRotatingPlatform) {
+        const allCells = [];
+        [0, 1, 2].forEach(s => {
+            getRotatingPlatformCells(s).forEach(cell => {
+                if (!allCells.some(c => c.r === cell.r && c.c === cell.c)) allCells.push(cell);
+            });
+        });
+        allCells.forEach(cell => currentLevelData.map[cell.r][cell.c] = 4);
+
+        if (!currentLevelData.rotatingPlatform) {
+            currentLevelData.rotatingPlatform = {
+                r: 12, c: 14, state: 0, dir: 1, targetRot: 0, group: new THREE.Group(), meshes: []
+            };
+        }
+        const plat = currentLevelData.rotatingPlatform;
+        plat.group.clear();
+        plat.meshes = [];
+        plat.group.position.set(14, 0, 12);
+        plat.targetRot = -plat.state * (Math.PI / 2);
+        plat.group.rotation.y = plat.targetRot;
+
+        if (models.rotatingPlatformGltf) {
+            const visualModel = SkeletonUtils.clone(models.rotatingPlatformGltf.scene);
+
+            visualModel.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material = child.material.clone();
+                    child.material.transparent = true;
+                    child.material.depthWrite = true;
+                }
+            });
+            plat.group.add(visualModel);
+        }
+
+        const state0Cells = getRotatingPlatformCells(0);
+        for (let i = 0; i < state0Cells.length; i++) {
+            const localC = state0Cells[i].c - 14;
+            const localR = state0Cells[i].r - 12;
+
+            const floor = new THREE.Mesh(
+                new THREE.BoxGeometry(0.95, 0.05, 0.95),
+                new THREE.MeshStandardMaterial({
+                    color: 0x000000, emissive: 0x00ffcc, emissiveIntensity: 2,
+                    transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending
+                })
+            );
+            floor.position.set(localC, 0.05, localR);
+            floor.renderOrder = 1;
+
+            const edges = new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.95, 0.95));
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+                color: 0x5CC9FF, transparent: true, opacity: 0.1, depthWrite: false
+            }));
+            line.rotation.x = -Math.PI / 2;
+            line.position.y = 0.05;
+            line.renderOrder = 2;
+            line.raycast = () => { };
+            line.userData = { isOutline: true };
+            floor.add(line);
+
+            const angle = plat.targetRot;
+            const newLocalC = Math.round(localC * Math.cos(angle) + localR * Math.sin(angle));
+            const newLocalR = Math.round(-localC * Math.sin(angle) + localR * Math.cos(angle));
+
+            floor.userData = { r: 12 + newLocalR, c: 14 + newLocalC, type: 'floor', isHitbox: true, isPlatform: true };
+
+            plat.meshes.push(floor);
+            plat.group.add(floor);
+        }
+        physGridGroup.add(plat.group);
+    }
 
     //geração da grelha
     for (let r = 0; r < rows; r++) {
@@ -1385,13 +1520,37 @@ function buildPhysicalWorld() {
         physGridGroup.add(mesh);
     });
 
-    //Drones (não chegaram a ser ussados porque removemos o nível dos TESTING GROUNDS)
+    //Drones
     currentLevelData.drones.forEach(drone => {
-        const mesh = new THREE.Mesh(
-            new THREE.SphereGeometry(0.3, 8, 8),
-            new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0xaa00ff, emissiveIntensity: 0.5, transparent: true })
-        );
+        let mesh;
+
+        if (models.droneGltf) {
+            mesh = SkeletonUtils.clone(models.droneGltf.scene);
+
+
+            mesh.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material = child.material.clone();
+                    child.material.transparent = true;
+                    child.material.depthWrite = true;
+                }
+            });
+        } else {
+            //Fallback
+            mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.3, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0xaa00ff, emissiveIntensity: 0.5, transparent: true })
+            );
+        }
+
         mesh.position.set(drone.c, 0.8, drone.r);
+        if (drone.path && drone.path.length > 1) {
+            const nextR = drone.path[1][0];
+            const nextC = drone.path[1][1];
+            const initRot = Math.atan2(nextC - drone.c, nextR - drone.r);
+            mesh.rotation.y = initRot;
+            drone.targetRot = initRot;
+        }
         mesh.userData = { r: drone.r, c: drone.c, type: 'drone' };
         drone.mesh = mesh;
         physGridGroup.add(mesh);
@@ -1514,8 +1673,33 @@ function buildPhysicalWorld() {
         playerGroup.add(netBody2);
     }
 
-    //Adiciona o jogador  à cena
+    if (currentLevelData.rotatingPlatform) {
+        const activeCells = getRotatingPlatformCells(currentLevelData.rotatingPlatform.state);
+        activeCells.forEach(cell => currentLevelData.map[cell.r][cell.c] = 0);
+    }
+    //Adiciona o jogador à cena
     scene.add(playerGroup);
+}
+
+function getRotatingPlatformCells(state) {
+    const cells = [];
+
+    //centro (3x3) - mantém-se igual
+    for (let r = 11; r <= 13; r++) {
+        for (let c = 13; c <= 15; c++) cells.push({ r, c });
+    }
+
+    //braços (3 de largura e 2 de comprimento a partir do centro)
+    const addTopArm = () => { for (let r = 9; r <= 10; r++) for (let c = 13; c <= 15; c++) cells.push({ r, c }); };
+    const addBottomArm = () => { for (let r = 14; r <= 15; r++) for (let c = 13; c <= 15; c++) cells.push({ r, c }); };
+    const addLeftArm = () => { for (let r = 11; r <= 13; r++) for (let c = 11; c <= 12; c++) cells.push({ r, c }); };
+    const addRightArm = () => { for (let r = 11; r <= 13; r++) for (let c = 16; c <= 17; c++) cells.push({ r, c }); };
+
+    if (state === 0) { addLeftArm(); addTopArm(); }
+    else if (state === 1) { addTopArm(); addRightArm(); }
+    else if (state === 2) { addRightArm(); addBottomArm(); }
+
+    return cells;
 }
 
 /////////////////////////////////////////
@@ -1585,7 +1769,7 @@ function updateVision() {
         });
     }
 
-    //area dos drones (não usado)
+    //area dos drones 
     if (currentLevelData.drones) {
         currentLevelData.drones.forEach(drone => {
             if (drone.active !== false) {
@@ -1655,7 +1839,7 @@ function drawVisionCone(startR, startC, dir, length, startOffset = 1, spread = 1
     else if (dir === 'left') { dc = -1; orthoR = 1; }
     else if (dir === 'right') { dc = 1; orthoR = 1; }
 
-    //cria um registo global para memorizar quais os quadrados já foram pintados de vermelho neste turno.
+    //cria um registo para memorizar quais os quadrados já foram pintados de vermelho neste turno.
     //isto evita sobreposição de cores se as visões de dois guardas se cruzarem.
     if (!window.drawnVisionTiles) window.drawnVisionTiles = new Set();
 
@@ -1805,6 +1989,9 @@ function processDrones() {
     currentLevelData.drones.forEach(drone => {
         if (drone.active === false) return;
 
+        const oldR = drone.r;
+        const oldC = drone.c;
+
         if (drone.forward) {
             drone.pathIdx++;
             if (drone.pathIdx >= drone.path.length - 1) drone.forward = false;
@@ -1814,6 +2001,10 @@ function processDrones() {
         }
         drone.r = drone.path[drone.pathIdx][0];
         drone.c = drone.path[drone.pathIdx][1];
+
+        if (drone.r !== oldR || drone.c !== oldC) {
+            drone.targetRot = Math.atan2(drone.c - oldC, drone.r - oldR);
+        }
 
         if (drone.mesh) {
             drone.mesh.userData.r = drone.r;
@@ -2164,6 +2355,9 @@ function spawnICE(f, x, z) {
         if (child.isMesh) {
             child.renderOrder = 1000;
             if (child.material) {
+
+                child.material = child.material.clone();
+
                 child.material.depthTest = true;
                 child.material.depthWrite = true;
                 child.material.transparent = true;
@@ -2474,12 +2668,14 @@ window.addEventListener('mousemove', (e) => {
 
                 //se houver uma rota segura, ilumina os quadrados
                 if (currentPath && currentPath.length > 0) {
-                    physGridGroup.children.forEach(child => {
-                        if (child.userData.type === 'floor' || child.userData.type === 'platform') {
+                    physGridGroup.traverse(child => {
+                        if (child.userData && (child.userData.type === 'floor' || child.userData.type === 'platform')) {
                             const inPath = currentPath.some(p => p.r === child.userData.r && p.c === child.userData.c);
                             if (inPath) {
                                 //fica Laranja se for um movimento do próximo turno, Ciano se for do atual
-                                child.material.emissive.setHex(player.ap > 0 ? 0x00ffcc : 0xff8800);
+                                if (child.material && child.material.emissive) {
+                                    child.material.emissive.setHex(player.ap > 0 ? 0x00ffcc : 0xff8800);
+                                }
                             }
                         }
                     });
@@ -2642,12 +2838,55 @@ window.addEventListener('mousedown', (e) => {
                             //targetDoor.leftMesh.material.emissive.setHex(0x00ffcc);
                             //targetDoor.rightMesh.material.color.setHex(0x00ffcc);
                             //targetDoor.rightMesh.material.emissive.setHex(0x00ffcc);
+
+                            if (targetDoor.leftMesh) showFloatingIndicator(targetDoor.leftMesh.parent, activeTerminal);
                         }
                         successMessage = "CORE COMPROMISED. DOOR UNLOCKED.";
 
+                    } else if (activeTerminal.action === "unlock_and_disable") {
+                        let successParts = [];
+
+                        //Abre a porta
+                        if (activeTerminal.targetDoorId) {
+                            const targetDoor = currentLevelData.doors.find(d => d.id === activeTerminal.targetDoorId);
+                            if (targetDoor) {
+                                targetDoor.unlocked = true;
+                                if (targetDoor.leftMesh) showFloatingIndicator(targetDoor.leftMesh.parent, activeTerminal);
+                                successParts.push("DOOR UNLOCKED");
+                            }
+                        }
+
+                        //Desliga o Drone
+                        if (activeTerminal.targetDroneId) {
+                            const targetDrone = currentLevelData.drones.find(d => d.id === activeTerminal.targetDroneId);
+                            if (targetDrone) {
+                                targetDrone.active = false;
+
+                                if (targetDrone.mesh) {
+                                    if (targetDrone.mesh.isGroup) {
+                                        targetDrone.mesh.traverse((child) => {
+                                            if (child.isMesh && child.material) {
+                                                if (child.material.emissive) child.material.emissive.setHex(0x111111);
+                                                child.material.opacity = 0.3;
+                                            }
+                                        });
+                                    } else {
+                                        targetDrone.mesh.material.emissive.setHex(0x111111);
+                                        targetDrone.mesh.material.opacity = 0.3;
+                                    }
+                                }
+                                successParts.push("DRONE OFFLINE");
+                            }
+                        }
+
+                        successMessage = "CORE COMPROMISED. " + successParts.join(" AND ") + ".";
+
                     } else if (activeTerminal.action === "disable_camera") {
                         const targetCam = currentLevelData.cameras.find(c => c.id === activeTerminal.targetId);
-                        if (targetCam) targetCam.active = false;
+                        if (targetCam) {
+                            targetCam.active = false;
+                            showFloatingIndicator(targetCam.mesh, activeTerminal);
+                        }
                         successMessage = "CORE COMPROMISED. CAMERA NETWORK OFFLINE.";
 
                     } else if (activeTerminal.action === "rotate_arm") {    //primeiro nível
@@ -2655,10 +2894,53 @@ window.addEventListener('mousedown', (e) => {
                             currentLevelData.robotArmTargetRot -= Math.PI; //roda o braço
                             currentLevelData.map[8][7] = 0; //liberta as células na data
                             currentLevelData.map[7][7] = 0;
+
+                            showFloatingIndicator(currentLevelData.robotArm, activeTerminal);
                         }
                         successMessage = "CORE COMPROMISED. MACHINERY OVERRIDE ENGAGED.";
 
-                    } else if (activeTerminal.action === 'disable_drone') { //não usado devido à remoção do nível 4
+                    } else if (activeTerminal.action === "rotate_platform") {
+                        if (currentLevelData.rotatingPlatform) {
+                            const plat = currentLevelData.rotatingPlatform;
+
+                            //limpa as células antigas transformando-as em buracos (4)
+                            const oldCells = getRotatingPlatformCells(plat.state);
+                            oldCells.forEach(cell => currentLevelData.map[cell.r][cell.c] = 4);
+
+                            //estado de rotação em loop (0 -> 1 -> 2 -> 1 -> 0)
+                            plat.state += plat.dir;
+                            if (plat.state === 2) plat.dir = -1;
+                            else if (plat.state === 0) plat.dir = 1;
+
+                            //define as novas células como chão caminhável (0)
+                            const newCells = getRotatingPlatformCells(plat.state);
+                            newCells.forEach(cell => currentLevelData.map[cell.r][cell.c] = 0);
+
+                            plat.targetRot = -plat.state * (Math.PI / 2);
+
+                            for (let i = 0; i < plat.meshes.length; i++) {
+                                const mesh = plat.meshes[i];
+
+                                //calcula a posição relativa ao centro (14, 12)
+                                const localC = mesh.position.x;
+                                const localR = mesh.position.z;
+
+                                //aplica a matriz de rotação inversa para encontrar a nova coordenada
+                                const angle = plat.targetRot;
+                                const newLocalC = Math.round(localC * Math.cos(angle) + localR * Math.sin(angle));
+                                const newLocalR = Math.round(-localC * Math.sin(angle) + localR * Math.cos(angle));
+
+                                //atualiza o userData para o Raycaster detetar corretamente
+                                mesh.userData.c = 14 + newLocalC;
+                                mesh.userData.r = 12 + newLocalR;
+
+                                //atualiza o material para garantir que ele responde ao hover
+                                mesh.userData.isHitbox = true;
+                                mesh.userData.type = 'platform';
+                            }
+                        }
+
+                    } else if (activeTerminal.action === 'disable_drone') { //não usado
                         //lista de targets
                         const targets = Array.isArray(activeTerminal.targetId) ? activeTerminal.targetId : [activeTerminal.targetId];
 
@@ -2676,6 +2958,7 @@ window.addEventListener('mousedown', (e) => {
                                     targetDrone.mesh.material.opacity = 0.3;
                                     targetDrone.mesh.position.y = 0.1; //drone cai no chão
                                 }
+
                                 disabledCount++;
                             }
                         });
@@ -2752,6 +3035,10 @@ window.addEventListener('keydown', (e) => {
         e.preventDefault();  //impede o ecrã de deslizar para baixo no browser
         document.getElementById('btn-end-turn').click();
     }
+});
+
+window.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
 });
 
 ///////////////////////////////
@@ -3226,7 +3513,19 @@ document.getElementById('btn-harpoon').onclick = () => {
 
     if (target.data.hp <= 0) {
         target.data.active = false;
-        target.group.visible = false;
+        target.data.isDying = true;
+        target.data.deathTime = Date.now();
+
+        if (target.data.type === 'Scorpion') player.statuses.scorpionActive = false;
+        if (target.data.type === 'Kraken') player.statuses.krakenActive = false;
+
+        //escolhe um som aleatório entre os 3 disponíveis
+        const deathSounds = [sfx.iceDeath1, sfx.iceDeath2, sfx.iceDeath3];
+        const randomDeathSound = deathSounds[Math.floor(Math.random() * deathSounds.length)];
+
+        if (randomDeathSound.isPlaying) randomDeathSound.stop();
+        randomDeathSound.play();
+
         if (selectedTarget === target) selectedTarget = null;
         pushToLog("TARGET TERMINATED", true);
     } else {
@@ -3337,7 +3636,19 @@ document.getElementById('btn-swordfish').onclick = () => {
 
     if (target.data.hp <= 0) {
         target.data.active = false;
-        target.group.visible = false;
+        target.data.isDying = true;
+        target.data.deathTime = Date.now();
+
+        if (target.data.type === 'Scorpion') player.statuses.scorpionActive = false;
+        if (target.data.type === 'Kraken') player.statuses.krakenActive = false;
+
+        //escolhe um som aleatório entre os 3 disponíveis
+        const deathSounds = [sfx.iceDeath1, sfx.iceDeath2, sfx.iceDeath3];
+        const randomDeathSound = deathSounds[Math.floor(Math.random() * deathSounds.length)];
+
+        if (randomDeathSound.isPlaying) randomDeathSound.stop();
+        randomDeathSound.play();
+
         if (selectedTarget === target) selectedTarget = null;
         pushToLog("TARGET TERMINATED", true);
     } else {
@@ -3430,7 +3741,7 @@ function playBadEndingCutscene() {
     renderer.domElement.style.display = 'none';
 
     const script = [
-        { side: "right", name: "SYSTEM", text: "SYSTEM OVERRIDE SUCCESSFUL.\nACCESSING MAINFRAME..." },
+        { side: "right", name: "SYSTEM", text: "SYSTEM OVERRIDE SUCCESSFUL. ACCESSING MAINFRAME..." },
         { side: "right", name: "SYSTEM?", text: "TRACE COMPLETE. TARGET IS ISOLATED IN THE CONTROL TOWER" },
         { side: "right", name: "SYSTEM?", text: "SECURITY TEST COMPLETE. VULNERABILITIES LOGGED." },
         { side: "right", name: "SYSTEM?", text: "TANK YOU FOR YOUR PARTICIPATION.\n GOODBYE RUNNER" },
@@ -3453,7 +3764,7 @@ function playBadEndingCutscene() {
 function triggerEndingSequence(imageSrc, endingText) {
     const endScreen = document.getElementById('ending-screen');
     const endTitle = document.getElementById('ending-title');
-    
+
     //define a imagem e o texto dependendo do final
     endScreen.style.backgroundImage = `url('${imageSrc}')`;
     endTitle.innerHTML = endingText;
@@ -3473,10 +3784,80 @@ function triggerEndingSequence(imageSrc, endingText) {
             appState = 'MENU';
             switchScreen('main-menu');
             renderer.domElement.style.display = 'none';
-            endScreen.style.display = 'none'; 
             switchBGM(bgm.intro);
         }, 2000);
     }, 6000);
+}
+
+function showFloatingIndicator(targetObject, terminalData) {
+    if (!targetObject) return;
+
+    //alvo e o seu topo
+    const box = new THREE.Box3().setFromObject(targetObject);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    const topY = box.max.y !== -Infinity ? box.max.y : center.y + 1;
+    const startY = topY + 0.4;
+
+    //diamante
+    const geo = new THREE.OctahedronGeometry(0.2);
+    const mat = new THREE.MeshBasicMaterial({
+        color: 0x00ffcc,
+        wireframe: true,
+        transparent: true,
+        opacity: 0,
+        depthTest: false
+    });
+    const indicator = new THREE.Mesh(geo, mat);
+    indicator.position.set(center.x, startY, center.z);
+    indicator.renderOrder = 9999;
+
+    const light = new THREE.PointLight(0x00ffcc, 2, 3);
+    indicator.add(light);
+
+    indicator.userData = { isTemporaryIndicator: true, startY: startY, spawnTime: Date.now() };
+    scene.add(indicator);
+
+    //cria a linha tracejada a ligar o terminal ao diamante
+    let dataLine = null;
+    if (terminalData) {
+        //coordenadas do terminal
+        const terminalPos = new THREE.Vector3(terminalData.c, 1, terminalData.r);
+        const targetPos = new THREE.Vector3(center.x, startY, center.z);
+
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([terminalPos, targetPos]);
+        const lineMat = new THREE.LineDashedMaterial({
+            color: 0x00ffcc,
+            transparent: true,
+            opacity: 0,
+            dashSize: 0.2,
+            gapSize: 0.1,
+            depthTest: false
+        });
+
+        dataLine = new THREE.Line(lineGeo, lineMat);
+        dataLine.computeLineDistances();
+        dataLine.renderOrder = 9999;
+
+        dataLine.userData = {
+            isTemporaryIndicator: true,
+            isLine: true,
+            spawnTime: Date.now()
+        };
+        scene.add(dataLine);
+    }
+
+    //desaparece após 3 segundos
+    setTimeout(() => {
+        scene.remove(indicator);
+        geo.dispose(); mat.dispose(); light.dispose();
+
+        if (dataLine) {
+            scene.remove(dataLine);
+            dataLine.geometry.dispose();
+            dataLine.material.dispose();
+        }
+    }, 5000);
 }
 
 ////////////////////////////////////////
@@ -3595,8 +3976,8 @@ function animate() {
                     }
                     //tiles
                     else if (m.userData.isHitbox) {
-                        const isExit = currentLevelData.exit && currentLevelData.exit.r === child.userData.r && currentLevelData.exit.c === child.userData.c;
-                        const inPath = currentPath && currentPath.some(p => p.r === child.userData.r && p.c === child.userData.c);
+                        const isExit = currentLevelData.exit && currentLevelData.exit.r === m.userData.r && currentLevelData.exit.c === m.userData.c;
+                        const inPath = currentPath && currentPath.some(p => p.r === m.userData.r && p.c === m.userData.c);
 
                         if (currentMode === 'NETRUN') {
                             finalTargetOp = 0.3; //no Netspace, o chão físico é quase transparente
@@ -3611,10 +3992,11 @@ function animate() {
                         if (currentMode === 'NETRUN') {
                             finalTargetOp = 0.0; //em Netspace remove os outlines de tiles no mundo fisico
                         } else {
-                            const isExit = currentLevelData.exit && currentLevelData.exit.r === child.userData.r && currentLevelData.exit.c === child.userData.c;
+                            const parentData = m.parent.userData;
+                            const isExit = currentLevelData.exit && currentLevelData.exit.r === parentData.r && currentLevelData.exit.c === parentData.c;
 
                             //verifica se este quadrado faz parte da rota planeada
-                            const inPath = currentPath && currentPath.some(p => p.r === child.userData.r && p.c === child.userData.c);
+                            const inPath = currentPath && currentPath.some(p => p.r === parentData.r && p.c === parentData.c);
 
                             if (isExit) {
                                 finalTargetOp = 1.0;
@@ -3761,6 +4143,14 @@ function animate() {
         currentLevelData.robotArm.rotation.y += (currentLevelData.robotArmTargetRot - currentLevelData.robotArm.rotation.y) * 0.1;
     }
 
+    //animação da plataforma do nível 4
+    if (currentLevelData && currentLevelData.rotatingPlatform) {
+        const plat = currentLevelData.rotatingPlatform;
+        const diff = plat.targetRot - plat.group.rotation.y;
+        const shortestDiff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        plat.group.rotation.y += shortestDiff * 0.1;
+    }
+
     //guardas e objetos
     if (currentLevelData.guards) {
         currentLevelData.guards.forEach(guard => {
@@ -3800,6 +4190,11 @@ function animate() {
     currentLevelData.drones.forEach(drone => {
         if (drone.mesh) {
             if (drone.active !== false) {
+                if (drone.targetRot !== undefined) {
+                    const diff = drone.targetRot - drone.mesh.rotation.y;
+                    const shortestDiff = Math.atan2(Math.sin(diff), Math.cos(diff));
+                    drone.mesh.rotation.y += shortestDiff * 0.2;
+                }
                 //flutua e desloca-se para a sua coordenada
                 drone.mesh.position.x += (drone.c - drone.mesh.position.x) * 0.2;
                 drone.mesh.position.z += (drone.r - drone.mesh.position.z) * 0.2;
@@ -3807,6 +4202,33 @@ function animate() {
             } else {
                 //desliza para o chão
                 drone.mesh.position.y += (0.1 - drone.mesh.position.y) * 0.2;
+            }
+        }
+    });
+
+    //animação do indicador
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isTemporaryIndicator) {
+            const age = Date.now() - child.userData.spawnTime;
+
+            //só roda e flutua se não for a linha
+            if (!child.userData.isLine) {
+                child.rotation.y += 0.05;
+                child.rotation.x += 0.01;
+                child.position.y = child.userData.startY + Math.sin(Date.now() * 0.005) * 0.15;
+            }
+
+            //gestão de Opacidade (aplica-se tanto ao diamante como à linha)
+            if (age < 300) {
+                child.material.opacity = age / 300;
+            } else if (age > 4000) {
+                child.material.opacity = Math.max(0, 1 - ((age - 4000) / 1000));
+
+                if (child.children.length > 0 && child.children[0].intensity !== undefined) {
+                    child.children[0].intensity = child.material.opacity * 2;
+                }
+            } else {
+                child.material.opacity = 1;
             }
         }
     });
@@ -3878,7 +4300,42 @@ function animate() {
 
                 //só mostra inimigos que estejam no mesmo andar (ou durante um scan do Sonar)
                 en.group.visible = (en.data.floor === player.floor || isScanning);
-            } else en.group.visible = false;
+
+            } else {
+                //fade out quando um ICE morre
+                if (en.data.isDying) {
+                    const age = Date.now() - en.data.deathTime;
+
+                    if (age < 500) {
+                        en.group.visible = true; //mantém-no visível enquanto desvanece
+                        const fadeOpacity = Math.max(0, 1.0 - (age / 500));
+
+                        if (en.group.userData.personalLight) {
+                            en.group.userData.personalLight.intensity = fadeOpacity * 2;
+                        }
+
+                        //torna os materiais gradualmente transparentes
+                        if (en.body.isGroup) {
+                            en.body.traverse((child) => {
+                                if (child.isMesh && child.material) child.material.opacity = fadeOpacity;
+                            });
+                        } else {
+                            if (en.body.material) en.body.material.opacity = fadeOpacity;
+                        }
+
+                        //os ICE flutuam ligeiramente para cima enquanto morrem (como fumo)
+                        en.group.position.y += 0.01;
+
+                    } else {
+                        //quando passar 1 segundo, desliga-o por completo
+                        en.data.isDying = false;
+                        en.group.visible = false;
+                    }
+                } else {
+                    //inimigos inativos e que não estão a morrer ficam invisíveis
+                    en.group.visible = false;
+                }
+            }
         });
 
         //movimento suave dos andares da arquitetura (efeito de elevador)
@@ -3917,3 +4374,68 @@ function animate() {
 
 //inicia o ciclo de animação
 animate();
+
+
+/////////////////////////
+//efeito de chuva no menu
+/////////////////////////
+
+const matrixCanvas = document.getElementById('matrix-canvas');
+const matrixCtx = matrixCanvas.getContext('2d');
+
+matrixCanvas.width = window.innerWidth;
+matrixCanvas.height = window.innerHeight;
+
+const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴッン';
+const charArray = matrixChars.split('');
+
+const fontSize = 16;
+let columns = matrixCanvas.width / fontSize;
+let drops = [];
+
+for (let x = 0; x < columns; x++) {
+    drops[x] = Math.random() * matrixCanvas.height;
+}
+
+function drawMatrix() {
+    //verifica qual ecrã está visível
+    const isMenu = document.getElementById('main-menu').classList.contains('active');
+    const isMap = document.getElementById('world-map').classList.contains('active');
+
+    //só desenha a chuva no Main Menu ou na Seleção de Níveis
+    if (!isMenu && !isMap) {
+        matrixCanvas.style.display = 'none';
+        return;
+    } else {
+        matrixCanvas.style.display = 'block';
+    }
+
+    matrixCtx.fillStyle = 'rgba(1, 1, 3, 0.1)'; 
+    matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+    matrixCtx.fillStyle = '#00ffcc';
+    matrixCtx.font = fontSize + 'px monospace';
+
+    for (let i = 0; i < drops.length; i++) {
+        const text = charArray[Math.floor(Math.random() * charArray.length)];
+        
+        matrixCtx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+
+setInterval(drawMatrix, 35);
+
+window.addEventListener('resize', () => {
+    matrixCanvas.width = window.innerWidth;
+    matrixCanvas.height = window.innerHeight;
+    columns = matrixCanvas.width / fontSize;
+    drops = [];
+    for (let x = 0; x < columns; x++) {
+        drops[x] = Math.random() * matrixCanvas.height;
+    }
+});

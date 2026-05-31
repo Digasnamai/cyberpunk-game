@@ -194,9 +194,9 @@ export const LEVEL_DATA = {
         //"targetId" é a referência para a porta, camara ou objeto onde atuar
         //"floors" determina quantos n´íveis tem a architecture
         terminals: [
-            { id: "T1", r: 2, c: 2, action: "unlock_door", targetId: "D1", floors: 2 ,dir: 'left'},
-            { id: "T2", r: 1, c: 14, action: "unlock_door", targetId: "D2", floors: 3 ,dir: 'left'},
-            { id: "T3", r: 8, c: 5, action: "rotate_arm", targetId: "RoboticArm", floors: 3 ,dir: 'up'}
+            { id: "T1", r: 2, c: 2, action: "unlock_door", targetId: "D1", floors: 2, dir: 'left' },
+            { id: "T2", r: 1, c: 14, action: "unlock_door", targetId: "D2", floors: 3, dir: 'left' },
+            { id: "T3", r: 8, c: 5, action: "rotate_arm", targetId: "RoboticArm", floors: 3, dir: 'up' }
         ],
 
         //bloqueiam movimento até serem desbloquadas por um terminal
@@ -219,6 +219,12 @@ export const LEVEL_DATA = {
                 text: "Levels inside an architecture might be locked, you must look for a decryption key to proceed",
                 mediaType: "image",
                 mediaSrc: "media/datapadTuto.png"
+            },
+            {
+                title: "CAMERAS",
+                text: "Cameras have a line of sight and can be deactivated by hacking a nearby terminal.",
+                mediaType: "image",
+                mediaSrc: "media/cameraTuto.png"
             },
         ],
 
@@ -292,11 +298,11 @@ export const LEVEL_DATA = {
         ],
 
         terminals: [
-            { id: "T1", r: 4, c: 5, action: "unlock_door", targetId: "D1", floors: 2 ,dir: 'down'},
+            { id: "T1", r: 4, c: 5, action: "unlock_door", targetId: "D1", floors: 2, dir: 'down' },
             //este terminal tem um layer bloqueado requerindo ao utilizador encontrar o Datapad para progredir
-            { id: "T2", r: 4, c: 19, action: "unlock_door", targetId: "D2", floors: 4, lockedWith: "PASS_T2",dir: 'left' },
-            { id: "T3", r: 0, c: 6, action: "disable_camera", targetId: "C3", floors: 2 ,dir: 'down'},
-            { id: "T4", r: 8, c: 13, action: "disable_camera", targetId: "C2", floors: 3 ,dir: 'right'},
+            { id: "T2", r: 4, c: 19, action: "unlock_door", targetId: "D2", floors: 4, lockedWith: "PASS_T2", dir: 'left' },
+            { id: "T3", r: 0, c: 6, action: "disable_camera", targetId: "C3", floors: 2, dir: 'down' },
+            { id: "T4", r: 8, c: 13, action: "disable_camera", targetId: "C2", floors: 3, dir: 'right' },
 
         ],
         //Datapad necessário para desbloquear um layer num terminal
@@ -475,9 +481,9 @@ export const LEVEL_DATA = {
 
         terminals: [
             { id: "T_TR_1", r: 3, c: 17, action: "disable_camera", targetId: "C_MID", floors: 2, dir: 'left' },
-            { id: "T_TR_2", r: 6, c: 16, action: "unlock_door", targetId: "D_TOP", floors: 3 ,dir: 'down'},
-            { id: "T_BR", r: 16, c: 17, action: "disable_camera", targetId: "C_BOT", floors: 3 ,dir: 'left'},
-            { id: "T_BL", r: 18, c: 4, action: "unlock_door", targetId: "D_BOT", floors: 3, lockedWith: "KEY_OMEGA" ,dir: 'right'}
+            { id: "T_TR_2", r: 6, c: 16, action: "unlock_door", targetId: "D_TOP", floors: 3, dir: 'down' },
+            { id: "T_BR", r: 16, c: 17, action: "disable_camera", targetId: "C_BOT", floors: 3, dir: 'left' },
+            { id: "T_BL", r: 18, c: 4, action: "unlock_door", targetId: "D_BOT", floors: 3, lockedWith: "KEY_OMEGA", dir: 'right' }
         ],
 
         exit: { r: 28, c: 1 },
@@ -487,241 +493,135 @@ export const LEVEL_DATA = {
     },
 
     4: { //Não usado
-        spawn: { r: 12, c: 0 },
+        spawn: { r: 2, c: 7 },
 
         tutorial: [
             {
                 title: "DRONES",
-                text: "This sector is heavily guarded by automated Drones. They follow strict, pre-programmed paths. Find an associated terminal to disable them",
+                text: "This sector is guarded by an automated Drone. Like guards it follows a path but you can find the associated terminal to disable it",
                 mediaType: "image",
-                mediaSrc: "media/placeholder.png"
+                mediaSrc: "media/droneTuto.png"
             }
         ],
 
         map: [
-            //   0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //0
-            [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //1
-            [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //2
-            [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //3
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //4
-            [1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //5
-            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //6
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 6, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //7
-            [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //8
-            [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //9
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //10
-            [1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //11
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //12
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //13
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], //14
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], //15
-            [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], //16
-            [1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], //17
-            [1, 0, 0, 2, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], //18
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1], //19
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 3, 0], //20
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1], //21
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1], //22
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 2, 0, 1], //23
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 2, 0, 1, 1, 1, 1, 0, 0, 0, 1], //24
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1], //25
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1], //26
-            [1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1], //27
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1], //28
-            [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1], //29
-            [1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //30
-            [1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 5, 0, 0, 0, 0, 0, 6, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  //31
+
+
+        // Layout
+
+        // 0 = célula livre
+        // 1 = parede/obstáculo
+        // 2 = terminal
+        // 3 = Porta
+        // 5 = camara
+        // 6 = Datapad 
+        //   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], //0
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1], //1
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1], //2
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 3, 0, 0, 0, 1, 1, 1, 0, 0, 0, 3, 0, 0, 2, 1], //3
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], //4
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], //5
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 1, 1], //6
+            [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1], //7
+            [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 2, 0, 0, 1], //8
+            [1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 1, 0, 0, 0, 1], //9
+            [1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 1, 1, 0, 1, 1], //10
+            [1, 0, 1, 0, 0, 0, 0, 0, 2, 1, 0, 4, 4, 4, 4, 4, 4, 4, 0, 1, 0, 0, 0, 1], //11
+            [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 1], //12
+            [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 4, 4, 4, 4, 4, 4, 4, 0, 1, 0, 0, 0, 1], //13
+            [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 1, 1, 0, 1, 1], //14
+            [1, 0, 1, 1, 1, 0, 0, 2, 1, 1, 1, 1, 1, 4, 4, 4, 1, 1, 1, 1, 0, 0, 0, 1], //15
+            [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 2, 0, 0, 1], //16
+            [1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1], //17
+            [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 5, 1], //18
+            [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1], //19
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 6, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 6, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         ],
 
         guards: [
+            // Quadrado Vermelho 1 (Patrulha) - Faz o percurso do corredor esquerdo e regressa
             {
-                r: 1, c: 3,
+                r: 9, c: 1,
                 path: [
-                    { r: 1, c: 3, dir: 'down' }, { r: 2, c: 3, dir: 'down' },
-                    { r: 3, c: 3, dir: 'down' }, { r: 4, c: 3, dir: 'right' },
-                    { r: 4, c: 4, dir: 'right' }, { r: 4, c: 5, dir: 'up' },
-                    { r: 3, c: 5, dir: 'up' }, { r: 2, c: 5, dir: 'up' },
-                    { r: 1, c: 5, dir: 'down' }, { r: 2, c: 5, dir: 'down' },
-                    { r: 3, c: 5, dir: 'down' }, { r: 4, c: 5, dir: 'left' },
-                    { r: 4, c: 4, dir: 'left' }, { r: 4, c: 3, dir: 'up' },
-                    { r: 3, c: 3, dir: 'up' }, { r: 2, c: 3, dir: 'up' },
+                    { r: 9, c: 1, dir: 'down' },{ r: 10, c: 1, dir: 'down' },
+                    { r: 11, c: 1, dir: 'down' },{ r: 12, c: 1, dir: 'down' },
+                    { r: 13, c: 1, dir: 'down' }, { r: 14, c: 1, dir: 'right' },
+                    { r: 14, c: 2, dir: 'right' }, { r: 14, c: 3, dir: 'up' },
+                    { r: 13, c: 3, dir: 'up' }, { r: 12, c: 3, dir: 'up' },
+                    { r: 11, c: 3, dir: 'up' }, { r: 10, c: 3, dir: 'up' },
+                     { r: 9, c: 3, dir: 'up' }, { r: 8, c: 3, dir: 'down' },
+                    { r: 9, c: 3, dir: 'down' },{ r: 10, c: 3, dir: 'down' }, 
+                    { r: 11, c: 3, dir: 'down' }, { r: 12, c: 3, dir: 'down' },
+                    { r: 13, c: 3, dir: 'down' }, { r: 14, c: 3, dir: 'left' },
+                    { r: 14, c: 2, dir: 'left' }, { r: 14, c: 1, dir: 'up' },
+                    { r: 13, c: 1, dir: 'up' }, { r: 12, c: 1, dir: 'up' },
+                    { r: 11, c: 1, dir: 'up' }, { r: 10, c: 1, dir: 'up' },
                 ],
-
                 pathIdx: 0, targetRot: 0
             },
+            // Quadrado Vermelho 2 (Estático) - Fica no final do corredor a olhar para cima e direita
             {
-                r: 16, c: 1, path: [
-                    { r: 16, c: 1, dir: 'down' }, { r: 17, c: 1, dir: 'down' },
-                    { r: 18, c: 1, dir: 'down' }, { r: 19, c: 1, dir: 'down' },
-                    { r: 20, c: 1, dir: 'down' }, { r: 21, c: 1, dir: 'down' },
-                    { r: 22, c: 1, dir: 'down' }, { r: 23, c: 1, dir: 'down' },
-                    { r: 24, c: 1, dir: 'down' }, { r: 25, c: 1, dir: 'down' },
-                    { r: 26, c: 1, dir: 'down' }, { r: 27, c: 1, dir: 'down' },
-                    { r: 28, c: 1, dir: 'right' }, { r: 28, c: 2, dir: 'right' },
-                    { r: 28, c: 3, dir: 'right' }, { r: 28, c: 4, dir: 'right' },
-                    { r: 28, c: 5, dir: 'up' }, { r: 27, c: 5, dir: 'up' },
-                    { r: 26, c: 5, dir: 'up' }, { r: 25, c: 5, dir: 'up' },
-                    { r: 24, c: 5, dir: 'up' }, { r: 23, c: 5, dir: 'up' },
-                    { r: 22, c: 5, dir: 'up' }, { r: 21, c: 5, dir: 'up' },
-                    { r: 20, c: 5, dir: 'up' }, { r: 19, c: 5, dir: 'up' },
-                    { r: 18, c: 5, dir: 'up' }, { r: 17, c: 5, dir: 'up' },
-                    { r: 16, c: 5, dir: 'left' }, { r: 16, c: 4, dir: 'left' },
-                    { r: 16, c: 3, dir: 'left' }, { r: 16, c: 2, dir: 'left' },
-                ],
-
-                pathIdx: 0, targetRot: Math.PI
-            },
-
-            {
-                r: 23, c: 11, path: [
-                    { r: 23, c: 11, dir: 'right' }, { r: 23, c: 12, dir: 'right' },
-                    { r: 23, c: 13, dir: 'right' }, { r: 23, c: 14, dir: 'right' },
-                    { r: 23, c: 15, dir: 'right' }, { r: 23, c: 16, dir: 'right' },
-                    { r: 23, c: 17, dir: 'right' }, { r: 23, c: 18, dir: 'right' },
-                    { r: 23, c: 19, dir: 'right' }, { r: 23, c: 20, dir: 'left' },
-                    { r: 23, c: 19, dir: 'left' }, { r: 23, c: 18, dir: 'left' },
-                    { r: 23, c: 17, dir: 'left' }, { r: 23, c: 16, dir: 'left' },
-                    { r: 23, c: 15, dir: 'left' }, { r: 23, c: 14, dir: 'up' },
-                    { r: 22, c: 14, dir: 'up' }, { r: 21, c: 14, dir: 'up' },
-                    { r: 20, c: 14, dir: 'up' }, { r: 19, c: 14, dir: 'up' },
-                    { r: 18, c: 14, dir: 'down' }, { r: 19, c: 14, dir: 'down' },
-                    { r: 20, c: 14, dir: 'down' }, { r: 21, c: 14, dir: 'down' },
-                    { r: 22, c: 14, dir: 'down' }, { r: 23, c: 14, dir: 'left' },
-                    { r: 23, c: 13, dir: 'left' }, { r: 23, c: 12, dir: 'left' },
-                ],
-                pathIdx: 0, targetRot: Math.PI
-            },
-            {
-                r: 25, c: 22, path: [
-                    { r: 25, c: 22, dir: 'right' }, { r: 25, c: 23, dir: 'right' },
-                    { r: 25, c: 24, dir: 'right' }, { r: 25, c: 25, dir: 'right' },
-                    { r: 25, c: 26, dir: 'right' }, { r: 25, c: 27, dir: 'right' },
-                    { r: 25, c: 28, dir: 'right' }, { r: 25, c: 29, dir: 'up' },
-                    { r: 24, c: 29, dir: 'up' }, { r: 23, c: 29, dir: 'left' },
-                    { r: 23, c: 28, dir: 'left' }, { r: 23, c: 27, dir: 'left' },
-                    { r: 23, c: 26, dir: 'left' }, { r: 23, c: 25, dir: 'left' },
-                    { r: 23, c: 24, dir: 'left' }, { r: 23, c: 23, dir: 'left' },
-                    { r: 23, c: 22, dir: 'right' }, { r: 23, c: 23, dir: 'right' },
-                    { r: 23, c: 24, dir: 'right' }, { r: 23, c: 25, dir: 'right' },
-                    { r: 23, c: 26, dir: 'right' }, { r: 23, c: 27, dir: 'right' },
-                    { r: 23, c: 28, dir: 'right' }, { r: 23, c: 29, dir: 'down' },
-                    { r: 24, c: 29, dir: 'down' }, { r: 25, c: 29, dir: 'left' },
-                    { r: 25, c: 28, dir: 'left' }, { r: 25, c: 27, dir: 'left' },
-                    { r: 25, c: 26, dir: 'left' }, { r: 25, c: 25, dir: 'left' },
-                    { r: 25, c: 24, dir: 'left' }, { r: 25, c: 23, dir: 'left' },
-
-                ], pathIdx: 0, targetRot: Math.PI / 2
-            },
-            {
-                r: 28, c: 36, path: [
-                    { r: 28, c: 36, dir: 'right' }, { r: 28, c: 37, dir: 'right' },
-                    { r: 28, c: 38, dir: 'right' }, { r: 28, c: 39, dir: 'up' },
-                    { r: 27, c: 39, dir: 'up' }, { r: 26, c: 39, dir: 'left' },
-                    { r: 26, c: 38, dir: 'left' }, { r: 26, c: 37, dir: 'left' },
-                    { r: 26, c: 36, dir: 'right' }, { r: 26, c: 37, dir: 'right' },
-                    { r: 26, c: 38, dir: 'right' }, { r: 26, c: 39, dir: 'down' },
-                    { r: 27, c: 39, dir: 'down' }, { r: 28, c: 39, dir: 'left' },
-                    { r: 28, c: 38, dir: 'left' }, { r: 28, c: 37, dir: 'left' },
-
-                ], pathIdx: 0, targetRot: Math.PI / 2
+                r: 8, c: 7,
+                dirs: ['up', 'right'],
+                dirIdx: 0, targetRot: 0
             }
         ],
 
         drones: [
+            // Quadrado Roxo (Drone) - Patrulha as duas salas de topo
             {
                 id: "DRONE_1", active: true,
-                r: 1, c: 10,
+                r: 1, c: 17,
                 path: [
-                    [1, 10], [2, 10], [3, 10],
-                    [4, 10], [5, 10], [6, 10],
-                    [7, 10], [8, 10], [9, 10],
-                    [10, 10], [9, 10], [8, 10],
-                    [7, 10], [6, 10], [5, 10],
-                    [4, 10], [3, 10], [2, 10], [1, 10]
-                ], pathIdx: 0, forward: true, mesh: null
-            },
-            {
-                id: "DRONE_2", active: true,
-                r: 16, c: 31,
-                path: [
-                    [16, 31], [17, 31], [18, 31],
-                    [19, 31], [20, 31], [21, 31],
-                    [22, 31], [23, 31], [24, 31],
-                    [25, 31], [26, 31], [27, 31],
-                    [28, 31], [29, 31], [28, 31],
-                    [27, 31], [26, 31], [25, 31],
-                    [24, 31], [23, 31], [22, 31],
-                    [21, 31], [20, 31], [19, 31],
-                    [18, 31], [17, 31], [16, 31]
-                ], pathIdx: 0, forward: true, mesh: null
-            },
-            {
-                id: "DRONE_3", active: true,
-                r: 16, c: 34,
-                path: [
-                    [16, 34], [17, 34], [18, 34],
-                    [19, 34], [18, 34], [17, 34], [16, 34]
-                ], pathIdx: 0, forward: true, mesh: null
-            },
-            {
-                id: "DRONE_4", active: true,
-                r: 16, c: 37,
-                path: [
-                    [16, 37], [17, 37], [18, 37],
-                    [19, 37], [20, 37], [21, 37],
-                    [20, 37], [19, 37], [18, 37],
-                    [17, 37], [16, 37]
-                ], pathIdx: 0, forward: true, mesh: null
-            },
-            {
-                id: "DRONE_5", active: true,
-                r: 16, c: 42,
-                path: [
-                    [16, 42], [16, 43], [16, 44],
-                    [16, 45], [16, 46], [16, 47],
-                    [16, 48], [16, 47], [16, 46],
-                    [16, 45], [16, 44], [16, 43], [16, 42]
-                ], pathIdx: 0, forward: true, mesh: null
-            },
-            {
-                id: "DRONE_6", active: true,
-                r: 21, c: 47,
-                path: [
-                    [21, 47], [22, 47], [21, 47]
+                    [1, 17], [2, 17], [3, 17], [4, 17], [5,17],
+                    [5, 16], [5, 15], [5, 14], [5, 13], [5, 12], [5, 11],
+                    [4, 11], [3, 11], [2, 11], [1, 11],
+                    [2, 11], [3, 11], [4, 11], [5, 11],
+                    [5, 12], [5, 13], [5, 14], [5, 15], [5, 16], [5, 17],
+                    [4, 17], [3, 17], [2, 17]
                 ], pathIdx: 0, forward: true, mesh: null
             }
         ],
 
         cameras: [
-            { id: "C_TOP", r: 12, c: 20, dirs: ['down'], dirIdx: 0, active: true, mesh: null },
-            { id: "C_BOT", r: 31, c: 11, dirs: ['up'], dirIdx: 0, active: true, mesh: null }
+            // Quadrado Verde Amarelado (Câmara) - A olhar para a direita
+            { id: "C_BOT_RIGHT", r: 18, c: 22, dirs: ['left'], dirIdx: 0, active: true, mesh: null }
         ],
 
         passwords: [
-            { r: 7, c: 20, id: "KEY_ALPHA", mesh: null },
-            { r: 31, c: 17, id: "KEY_BETA", mesh: null }
+            // Quadrados Brancos (Chaves/Datapads)
+            { r: 22, c: 14, id: "KEY_ALPHA", mesh: null }, // Quadrado branco da esquerda
+            { r: 20, c: 20, id: "KEY_BETA", mesh: null }   // Quadrado branco da direita
         ],
 
         doors: [
-            { id: "D_TOP_LEFT", r: 11, c: 8, dir: 'horizontal', unlocked: false, leftMesh: null, rightMesh: null },
-            { id: "D_MID_VERT", r: 16, c: 12, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null },
-            { id: "D_RIGHT_1", r: 20, c: 40, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null },
-            { id: "D_RIGHT_2", r: 20, c: 48, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null }
+            // Portas (Linhas Rosa)
+            { id: "D_TOP_LEFT", r: 3, c: 9, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null },
+            { id: "D_TOP_RIGHT", r: 3, c: 19, dir: 'vertical', unlocked: false, leftMesh: null, rightMesh: null },
+            { id: "D_BOT_LEFT", r: 17, c: 6, dir: 'horizontal', unlocked: false, leftMesh: null, rightMesh: null },
+            { id: "D_NEW_21", r: 6, c: 21, dir: 'horizontal', unlocked: false, leftMesh: null, rightMesh: null }
         ],
 
         terminals: [
-            { id: "T_1", r: 5, c: 1, action: "disable_camera", targetId: "C_TOP", floors: 2 },
-            { id: "T_2", r: 18, c: 3, action: "unlock_door", targetId: "D_TOP_LEFT", floors: 2, lockedWith: "KEY_BETA" },
-            { id: "T_3", r: 9, c: 13, action: "disable_drone", targetId: "DRONE_1", floors: 3 },
-            { id: "T_4", r: 19, c: 17, action: "unlock_door", targetId: "D_MID_VERT", floors: 3, lockedWith: "KEY_ALPHA" },
-            { id: "T_5", r: 28, c: 26, action: "disable_drone", targetId: ["DRONE_2", "DRONE_3", "DRONE_4"], floors: 4 },
-            { id: "T_6", r: 16, c: 39, action: "disable_drone", targetId: "DRONE_6", floors: 2 },
-            { id: "T_7", r: 24, c: 40, action: "unlock_door", targetId: "D_RIGHT_1", floors: 2 },
-            { id: "T_8", r: 23, c: 47, action: "unlock_door", targetId: "D_RIGHT_2", floors: 2 }
+            
+            { id: "T_1", r: 5, c: 10, action: "unlock_door", targetId: "D_TOP_LEFT", floors: 2, dir: 'right' },
+            
+            { id: "T_2", r: 8, c: 20, action: "unlock_door" , targetId: "D_TOP_RIGHT", floors: 3 , dir: 'right'},
+            
+            { id: "T_3", r: 11, c: 8, action: "rotate_platform", floors: 1, dir: 'down' },
+            
+            { id: "T_4", r: 3, c: 22, action: "unlock_and_disable", targetDoorId: "D_NEW_21", targetDroneId: "DRONE_1", floors: 3, dir: 'left' },
+            
+            { id: "T_5", r: 15, c: 7, action: "unlock_door", targetId: "D_BOT_LEFT", floors: 3, lockedWith: "KEY_BETA", dir: 'left' },
+            
+            { id: "T_6", r: 16, c: 20, action: "disable_camera", targetId: "C_BOT_RIGHT", floors: 2, lockedWith: "KEY_ALPHA", dir: 'right' }
         ],
 
-        exit: { r: 20, c: 49 },
+        exit: { r: 19, c: 6 },
 
         triggers: [],
         platforms: []
@@ -757,7 +657,7 @@ export const LEVEL_DATA = {
         passwords: [],
 
         terminals: [
-            { id: "FINAL", r: 3, c: 2, action: "ending", targetId: "D_HACK", floors: 10, dir: 'right'},
+            { id: "FINAL", r: 3, c: 2, action: "ending", targetId: "D_HACK", floors: 10, dir: 'right' },
         ],
 
         exit: { r: 3, c: 17 }
